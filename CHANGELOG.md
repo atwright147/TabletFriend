@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added reliability regression tests, testing documentation, and Task commands for building, testing, and running the app.
+- Added layout validation with clearer errors for invalid button and spacer sizes.
+
+### Changed
+
+- Updated the app and tests to .NET 10 and pinned the SDK through `global.json`.
+- Layout and theme changes now reload asynchronously, combine rapid file changes into one reload, and ignore outdated results.
+- Configuration and action errors now appear as nonmodal tray notifications.
+
+### Fixed
+
+- Invalid layout and theme edits now retain the last valid configuration. Renamed or deleted files refresh the menus and select an available fallback when needed.
+- Held and toggled keys now share consistent state tracking and are released during graceful shutdown. Pending action batches are cancelled when closing the app.
+- Fixed repeated tray menu event subscriptions and cleaned up file watchers, timers, and focus monitoring on shutdown.
+- Buttons and spacers without an explicit size now default to `1,1`.
+- Installation now shuts down the original instance gracefully after a successful move to AppData and keeps it running if installation fails.
+
 ## [v2.0.0] - 25.10.2023
 
 ### Added
