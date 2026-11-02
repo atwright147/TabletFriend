@@ -5,12 +5,18 @@ VisualStudioVersion = 16.0.31613.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TabletFriend", "TabletFriend\TabletFriend.csproj", "{9F294959-3411-49EA-BD9D-7A71678E76BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TabletFriend.Tests", "TabletFriend.Tests\TabletFriend.Tests.csproj", "{F68C442B-F6E4-4616-907F-72098F864383}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F68C442B-F6E4-4616-907F-72098F864383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F68C442B-F6E4-4616-907F-72098F864383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F68C442B-F6E4-4616-907F-72098F864383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F68C442B-F6E4-4616-907F-72098F864383}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9F294959-3411-49EA-BD9D-7A71678E76BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9F294959-3411-49EA-BD9D-7A71678E76BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F294959-3411-49EA-BD9D-7A71678E76BA}.Release|Any CPU.ActiveCfg = Release|Any CPU

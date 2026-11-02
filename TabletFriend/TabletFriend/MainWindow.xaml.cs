@@ -27,6 +27,8 @@ namespace TabletFriend
 		private AutomaticLayoutSwitcher _layoutSwitcher;
 		private TrayManager _tray;
 		private FileManager _file;
+		private AppFocusMonitor _focusMonitor;
+		private bool _offerInstall;
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
@@ -38,7 +40,8 @@ namespace TabletFriend
 
 		public MainWindow()
 		{
-			var focusMonitor = new AppFocusMonitor(); // Has to be at the very top or else it hangs on starup. Why? No idea. 
+			var focusMonitor = _focusMonitor = new AppFocusMonitor();
+			AppLifecycle.Initialize(this);
 
 			SystemEvents.DisplaySettingsChanged += OnSizeChanged;
 
@@ -55,10 +58,8 @@ namespace TabletFriend
 			_theme = new ThemeManager();
 			_layout = new LayoutManager();
 			Settings.Load();
+			_offerInstall = AppState.Settings.FirstLaunch;
 
-			Installer.TryInstall();
-
-			_ = UpdateChecker.Check();
 
 
 			_layoutList = new LayoutListManager();
@@ -70,6 +71,9 @@ namespace TabletFriend
 
 			_layoutSwitcher = new AutomaticLayoutSwitcher(focusMonitor);
 			_tray = new TrayManager(this, _layoutList, _themeList, focusMonitor);
+			_file.Errors += _tray.ShowError;
+			_file.ReportPendingErrors();
+			if (AppState.Settings.ToolbarAutohideEnabled) ToolbarAutohider.StartWatching();
 
 
 			if (AppState.Settings.AddToAutostart)
@@ -88,13 +92,69 @@ namespace TabletFriend
 			EventBeacon.Subscribe(Events.UpdateLayoutList, OnUpdateLayoutList);
 			EventBeacon.Subscribe(Events.ChangeLayout, OnUpdateLayoutList);
 			EventBeacon.Subscribe(Events.DockingChanged, OnDockingChanged);
+			Dispatcher.BeginInvoke(new Action(CompleteStartup));
 		}
 
 
 		private void OnSizeChanged(object sender, EventArgs eventArgs)
 		{
-			UiFactory.CreateUi(AppState.CurrentLayout, this);
+			if (AppLifecycle.IsShuttingDown) return;
+			Dispatcher.BeginInvoke(new Action(() =>
+			{
+				if (!AppLifecycle.IsShuttingDown && AppState.CurrentLayout != null)
+					UiFactory.CreateUi(AppState.CurrentLayout, this);
+			}));
 		}
+
+		private async void CompleteStartup()
+		{
+			if (AppLifecycle.IsShuttingDown) return;
+			if (Installer.TryInstall(_offerInstall)) await AppLifecycle.ShutdownAsync();
+			else _ = UpdateChecker.Check();
+		}
+
+		protected override async void OnClosing(CancelEventArgs e)
+		{
+			if (!AppLifecycle.ShutdownComplete)
+			{
+				e.Cancel = true;
+				base.OnClosing(e);
+				await AppLifecycle.ShutdownAsync();
+				return;
+			}
+			base.OnClosing(e);
+		}
+
+		internal void StopCallbacks()
+		{
+			SystemEvents.DisplaySettingsChanged -= OnSizeChanged;
+			var errors = new System.Collections.Generic.List<Exception>();
+			foreach (var cleanup in new Action[] { () => _file?.Dispose(), ToolbarAutohider.Dispose,
+				() => _layoutSwitcher?.Dispose(), () => _focusMonitor?.Dispose() })
+			{
+				try { cleanup(); } catch (Exception error) { errors.Add(error); }
+			}
+			if (errors.Count > 0) throw new AggregateException(errors);
+		}
+
+		internal Task WaitForCallbacksAsync() => _file?.Completion ?? Task.CompletedTask;
+
+		internal void FinishCleanup()
+		{
+			var errors = new System.Collections.Generic.List<Exception>();
+			foreach (var cleanup in new Action[] {
+				() => { if (AppState.Settings != null && AppState.CurrentLayoutName != null && AppState.CurrentThemeName != null)
+					EventBeacon.SendEvent(Events.UpdateSettings); },
+				() => { if (new WindowInteropHelper(this).Handle != IntPtr.Zero) AppBarFunctions.SetAppBar(this, DockingMode.None); },
+				() => _tray?.Dispose()
+			})
+			{
+				try { cleanup(); } catch (Exception error) { errors.Add(error); }
+			}
+			if (errors.Count > 0) throw new AggregateException(errors);
+		}
+
+		internal void ReportError(string message) => _tray?.ShowError(message);
 
 
 		private double _maxOpacity;

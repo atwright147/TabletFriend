@@ -22,6 +22,7 @@ namespace TabletFriend
 
 		public static void SendEvent(string tag, params object[] args)
 		{
+			if (AppLifecycle.IsShuttingDown && tag != Events.UpdateSettings) return;
 			if (_subscribers.TryGetValue(tag, out var subscribers))
 			{
 				foreach (var subscriber in subscribers.ToArray())
@@ -29,6 +30,12 @@ namespace TabletFriend
 					subscriber?.Invoke(args);
 				}
 			}
+		}
+
+		public static void Unsubscribe(string tag, Action<object[]> action)
+		{
+			if (_subscribers.TryGetValue(tag, out var subscribers))
+				subscribers.Remove(action);
 		}
 	}
 }

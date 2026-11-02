@@ -297,7 +297,7 @@ namespace TabletFriend
 
 			if (button.Action != null)
 			{
-				uiButton.Click += (e, o) => _ = button.Action.Invoke();
+				uiButton.Click += async (e, o) => await ActionRunner.RunAsync(button.Action);
 			}
 
 			Canvas.SetTop(uiButton, layout.CellSize * position.Y + layout.Margin + offset.Y);

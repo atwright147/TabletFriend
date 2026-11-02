@@ -5,8 +5,9 @@ using System.Windows;
 
 namespace TabletFriend
 {
-	public class AutomaticLayoutSwitcher
+	public class AutomaticLayoutSwitcher : IDisposable
 	{
+		private bool _disposed;
 		private AppFocusMonitor _monitor;
 
 		private Dictionary<string, string> _appSpecificLayouts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -42,7 +43,7 @@ namespace TabletFriend
 
 		private void OnAppChanged(string app)
 		{
-			if (!AppState.Settings.PerAppLayoutsEnabled)
+			if (_disposed || !AppState.Settings.PerAppLayoutsEnabled)
 			{
 				return;
 			}
@@ -52,9 +53,10 @@ namespace TabletFriend
 				// Yep. Can happen.
 				return;
 			}
-			Application.Current.Dispatcher.Invoke(
+			Application.Current.Dispatcher.BeginInvoke(new Action(
 				delegate
 				{
+					if (_disposed || AppLifecycle.IsShuttingDown) return;
 					if (MatchesApp(app, out var key))
 					{
 						EventBeacon.SendEvent(Events.ChangeLayout, key, LayoutChangeMethod.Automatic);
@@ -67,7 +69,15 @@ namespace TabletFriend
 						}
 					}
 				}
-			);
+			));
+		}
+
+		public void Dispose()
+		{
+			if (_disposed) return;
+			_disposed = true;
+			_monitor.OnAppChanged -= OnAppChanged;
+			EventBeacon.Unsubscribe(Events.UpdateLayoutList, OnUpdateLayoutList);
 		}
 
 		private bool MatchesApp(string app, out string layout)

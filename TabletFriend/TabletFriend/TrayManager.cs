@@ -13,7 +13,7 @@ using WpfAppBar;
 
 namespace TabletFriend
 {
-	public class TrayManager
+	public class TrayManager : IDisposable
 	{
 		private TaskbarIcon _icon;
 		private MenuItem _autostartMenuItem;
@@ -22,34 +22,34 @@ namespace TabletFriend
 		private MenuItem _perAppLayoutsMenuItem;
 		private readonly string _iconPathBlack = AppState.CurrentDirectory + "/files/icons/tray/tray_black.ico";
 		private readonly string _iconPathWhite = AppState.CurrentDirectory + "/files/icons/tray/tray_white.ico";
-		private readonly MainWindow _window;
-		private readonly LayoutListManager _layoutList;
-		private readonly ThemeListManager _themeList;
+		private readonly Func<MenuItem> _layoutMenu;
+		private readonly Func<MenuItem> _themeMenu;
+		private readonly ContextMenu _menu = new ContextMenu();
+		private bool _disposed;
 
-		private AppFocusMonitor _focusMonitor;
+		private IAppFocusMonitor _focusMonitor;
 		private MenuItem _focusedApp;
 		public TrayManager(MainWindow window, LayoutListManager layoutList, ThemeListManager themeList, AppFocusMonitor focusMonitor)
+			: this(layoutList.CloneMenu, themeList.CloneMenu, focusMonitor, true)
 		{
-			_window = window;
-			_layoutList = layoutList;
-			_themeList = themeList;
+		}
+
+		internal TrayManager(Func<MenuItem> layoutMenu, Func<MenuItem> themeMenu, IAppFocusMonitor focusMonitor, bool createIcon = false)
+		{
+			_layoutMenu = layoutMenu;
+			_themeMenu = themeMenu;
 			_focusMonitor = focusMonitor;
 
-			_icon = new TaskbarIcon();
-
-			if (_isLightTheme)
+			if (createIcon)
 			{
-				_icon.Icon = new Icon(_iconPathBlack);
+				_icon = new TaskbarIcon();
+				_icon.Icon = new Icon(_isLightTheme ? _iconPathBlack : _iconPathWhite);
+				_icon.Visibility = Visibility.Visible;
+				_icon.ContextMenu = _menu;
+				_icon.TrayLeftMouseDown += MouseDown;
 			}
-			else
-			{ 
-				_icon.Icon = new Icon(_iconPathWhite);
-			}
-
-			_icon.Visibility = Visibility.Visible;
-			_icon.ContextMenu = new ContextMenu();
-			_icon.TrayLeftMouseDown += MouseDown;
 			CreateMenu();
+			_focusMonitor.OnAppChanged += OnAppChanged;
 
 			EventBeacon.Subscribe(Events.ChangeLayout, OnUpdateLayoutList);
 			EventBeacon.Subscribe(Events.FilesChanged, OnUpdateLayoutList);
@@ -62,24 +62,44 @@ namespace TabletFriend
 
 		private void OnUpdateLayoutList(object[] obj = null)
 		{
-			// Secondary quick access context menu.
-			Application.Current.Dispatcher.Invoke(
-				() =>
-				{
-					_icon.ContextMenu.Items.Clear();
-					_icon.ContextMenu = new ContextMenu();
-					CreateMenu();
-				}
-			);
+			if (!_disposed) _menu.Dispatcher.Invoke(RebuildMenu);
+		}
+
+		internal void RebuildMenu()
+		{
+			if (_disposed) return;
+			_menu.Items.Clear();
+			CreateMenu();
+		}
+
+		internal MenuItem FocusedAppItem => _focusedApp;
+
+		public void ShowError(string message)
+		{
+			if (!_disposed) _icon?.ShowBalloonTip("Tablet Friend", message, BalloonIcon.Warning);
+		}
+
+		public void Dispose()
+		{
+			if (_disposed) return;
+			_disposed = true;
+			_focusMonitor.OnAppChanged -= OnAppChanged;
+			EventBeacon.Unsubscribe(Events.ChangeLayout, OnUpdateLayoutList);
+			EventBeacon.Unsubscribe(Events.FilesChanged, OnUpdateLayoutList);
+			if (_icon != null)
+			{
+				_icon.TrayLeftMouseDown -= MouseDown;
+				_icon.Dispose();
+			}
 		}
 
 		private void CreateMenu()
 		{
 			
-			_icon.ContextMenu.Items.Add(_layoutList.CloneMenu());
-			_icon.ContextMenu.Items.Add(_themeList.CloneMenu());
+			_menu.Items.Add(_layoutMenu());
+			_menu.Items.Add(_themeMenu());
 
-			DockingMenuFactory.CreateDockingMenu(_icon.ContextMenu);
+			DockingMenuFactory.CreateDockingMenu(_menu);
 
 			var settings = new MenuItem() { Header = "settings" };
 
@@ -104,12 +124,10 @@ namespace TabletFriend
 			if (AppState.Settings.ToolbarAutohideEnabled)
 			{
 				_autohideMenuItem = AddSubmenuItem(settings, "disable toolbar autohide", OnAutohideToggle);
-				ToolbarAutohider.StartWatching();
 			}
 			else
 			{
 				_autohideMenuItem = AddSubmenuItem(settings, "enable toolbar autohide", OnAutohideToggle);
-				ToolbarAutohider.StopWatching();
 			}
 
 			if (AppState.Settings.PerAppLayoutsEnabled)
@@ -123,23 +141,20 @@ namespace TabletFriend
 
 
 			AddSubmenuItem(settings, "open files directory...", OnOpenLayoutsDirectory);
-			_focusedApp = AddSubmenuItem(settings, "focused app: none");
-			_focusMonitor.OnAppChanged += OnAppChanged;
-			_icon.ContextMenu.Items.Add(settings);
+			_focusedApp = AddSubmenuItem(settings, "focused app: " + (_focusMonitor.FocusedApp ?? "none"));
+			_menu.Items.Add(settings);
 
-			_icon.ContextMenu.Items.Add(new Separator());
+			_menu.Items.Add(new Separator());
 			AddMenuItem("about", OnAbout);
 			AddMenuItem("quit", OnQuit);
 		}
 
 		private void OnAppChanged(string app)
 		{
-			_focusedApp.Dispatcher.Invoke(
-				() =>
-				{
-					_focusedApp.Header = "focused app: " + app;
-				}
-			);	
+			if (_disposed) return;
+			Action update = () => { if (!_disposed) _focusedApp.Header = "focused app: " + app; };
+			if (_menu.Dispatcher.CheckAccess()) update();
+			else if (!_menu.Dispatcher.HasShutdownStarted) _menu.Dispatcher.BeginInvoke(update);
 		}
 
 		private void OnAutostartToggle(object sender, RoutedEventArgs e)
@@ -229,7 +244,7 @@ namespace TabletFriend
 			{
 				item.IsEnabled = false;
 			}
-			_icon.ContextMenu.Items.Add(item);
+			_menu.Items.Add(item);
 			return item;
 		}
 
@@ -259,12 +274,9 @@ namespace TabletFriend
 		}
 
 
-		private void OnQuit(object sender, RoutedEventArgs e)
+		private async void OnQuit(object sender, RoutedEventArgs e)
 		{
-			AppBarFunctions.SetAppBar(_window, DockingMode.None);
-			_icon.Dispose();
-			EventBeacon.SendEvent(Events.UpdateSettings);
-			Process.GetCurrentProcess().Kill();
+			await AppLifecycle.ShutdownAsync();
 		}
 
 		private bool _isLightTheme

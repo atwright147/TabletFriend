@@ -41,6 +41,7 @@ namespace TabletFriend
 			}
 
 			var response = await Get(_repoLink);
+			if (AppLifecycle.IsShuttingDown) return;
 
 			var newVersion = new Version(response["name"].ToString());
 			var changes = response["body"].ToString();
@@ -89,7 +90,7 @@ namespace TabletFriend
 				return;
 			}
 
-			Process.GetCurrentProcess().Kill();
+			await AppLifecycle.ShutdownAsync();
 		}
 
 		private static async Task DownloadUpdate(JObject response, string version)

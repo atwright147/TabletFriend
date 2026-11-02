@@ -10,15 +10,15 @@ namespace TabletFriend
 		private static readonly string _preferredDirectory =
 			Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TabletFriend");
 
-		public static void TryInstall()
+		public static bool TryInstall(bool firstLaunch)
 		{
-			if (!AppState.Settings.FirstLaunch)
+			if (!firstLaunch)
 			{
-				return;
+				return false;
 			}
 			if (AppState.CurrentDirectory.TrimEnd('\\') == _preferredDirectory.TrimEnd('\\'))
 			{
-				return;
+				return false;
 			}
 			var result = MessageBox.Show(
 				"Welcome to Tablet Friend! See the https://github.com/Martenfur/TabletFriend#readme if you have any questions. Would you like to move Tablet Friend to AppData?",
@@ -53,6 +53,7 @@ namespace TabletFriend
 					DirectoryCopy(AppState.CurrentDirectory, _preferredDirectory, "*.exe");
 					DirectoryCopy(AppState.CurrentDirectory, _preferredDirectory, "*.json");
 					Process.Start(Path.Combine(_preferredDirectory, "TabletFriend.exe"));
+					return true;
 				}
 				catch (Exception e)
 				{
@@ -63,9 +64,8 @@ namespace TabletFriend
 						MessageBoxImage.Error
 					);
 				}
-				Process.GetCurrentProcess().Kill();
-				Environment.Exit(0);
 			}
+			return false;
 		}
 
 

@@ -28,6 +28,7 @@ namespace TabletFriend.Models
 		public LayoutModel() { }
 		public LayoutModel(LayoutData data)
 		{
+			LayoutValidator.Validate(data, "layout");
 			ButtonSize = Math.Max(data.ButtonSize ?? ButtonSize, MinButtonSize);
 			Margin = Math.Max(data.Margin ?? Margin, MinMargin);
 			LayoutWidth = Math.Max(data.LayoutWidth, MinLayoutWidth);

@@ -1,0 +1,38 @@
+version: '3'
+
+vars:
+  DOTNET: '{{.DOTNET | default "dotnet"}}'
+  CONFIGURATION: '{{.CONFIGURATION | default "Release"}}'
+  SOLUTION: TabletFriend/TabletFriend.sln
+  PROJECT: TabletFriend/TabletFriend/TabletFriend.csproj
+
+tasks:
+  default:
+    desc: Build the solution (Release by default)
+    cmds:
+      - task: build
+
+  restore:
+    desc: Restore application and test dependencies
+    cmds:
+      - '"{{.DOTNET}}" restore "{{.SOLUTION}}"'
+
+  build:
+    desc: Build the application and tests (includes restore)
+    cmds:
+      - '"{{.DOTNET}}" build "{{.SOLUTION}}" --configuration "{{.CONFIGURATION}}"'
+
+  test:
+    desc: Run the regression tests (includes restore and build)
+    cmds:
+      - '"{{.DOTNET}}" test "{{.SOLUTION}}" --configuration "{{.CONFIGURATION}}"'
+
+  run:
+    desc: Build and launch the toolbar (look for its tray icon)
+    cmds:
+      - '"{{.DOTNET}}" run --project "{{.PROJECT}}" --configuration "{{.CONFIGURATION}}"'
+
+  clean:
+    desc: Clean build outputs for the selected configuration
+    cmds:
+      - '"{{.DOTNET}}" clean "{{.SOLUTION}}" --configuration "{{.CONFIGURATION}}"'

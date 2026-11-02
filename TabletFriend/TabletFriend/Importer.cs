@@ -1,141 +1,80 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading;
-using System.Windows;
-using System.Windows.Controls.Primitives;
+using System.Threading.Tasks;
 using TabletFriend.Data;
-using TabletFriend.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace TabletFriend
 {
-	public static class Importer
-	{
-		private static readonly IDeserializer _deserializer = new DeserializerBuilder()
-			.WithNamingConvention(UnderscoredNamingConvention.Instance)
-			.IgnoreUnmatchedProperties()
-			.Build();
+    internal sealed class ImportResult<T>
+    {
+        public string Path { get; }
+        public T Data { get; }
+        public string Error { get; }
+        public ImportResult(string path, T data, string error = null)
+        { Path = path; Data = data; Error = error; }
+    }
 
+    internal sealed class DirectoryImport<T>
+    {
+        public string Path { get; }
+        public List<ImportResult<T>> Files { get; } = new List<ImportResult<T>>();
+        public string Error { get; set; }
+        public DirectoryImport(string path) { Path = path; }
+    }
 
-		public static Dictionary<string, LayoutModel> ImportLayouts()
-		{
-			var items = new Dictionary<string, LayoutModel>();
-			foreach (var file in Directory.GetFiles(AppState.LayoutsRoot, AppState.ConfigExtension))
-			{
-				var layout = ImportLayout(file);
-				if (layout != null)
-				{
-					items.Add(Path.GetFileNameWithoutExtension(file), layout);				
-				}
-			}
+    internal static class Importer
+    {
+        internal static ImportResult<T> Parse<T>(string path, string text)
+        {
+            try
+            {
+                var deserializer = new DeserializerBuilder()
+                    .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                    .IgnoreUnmatchedProperties().Build();
+                var data = deserializer.Deserialize<T>(text.Replace("\t", "  "));
+                if (data == null) throw new FormatException("Empty configuration.");
+                if (data is LayoutData layout) LayoutValidator.Validate(layout, path);
+                return new ImportResult<T>(path, data);
+            }
+            catch (Exception e) { return new ImportResult<T>(path, default, e.Message); }
+        }
 
-			return items;
-		}
+        internal static async Task<ImportResult<T>> ReadAsync<T>(string path, CancellationToken token)
+        {
+            for (var attempt = 0; attempt < 5; attempt++)
+            {
+                token.ThrowIfCancellationRequested();
+                try
+                {
+                    var text = await File.ReadAllTextAsync(path, token).ConfigureAwait(false);
+                    if (!string.IsNullOrWhiteSpace(text)) return Parse<T>(path, text);
+                    if (attempt == 4) return new ImportResult<T>(path, default, "Empty configuration.");
+                }
+                catch (IOException e)
+                {
+                    if (attempt == 4) return new ImportResult<T>(path, default, e.Message);
+                }
+                catch (UnauthorizedAccessException e) { return new ImportResult<T>(path, default, e.Message); }
+                await Task.Delay(100, token).ConfigureAwait(false);
+            }
+            throw new InvalidOperationException("Unreachable read attempt.");
+        }
 
-		public static Dictionary<string, ThemeModel> ImportThemes()
-		{
-			var items = new Dictionary<string, ThemeModel>();
-			foreach (var file in Directory.GetFiles(AppState.ThemesRoot, AppState.ConfigExtension))
-			{
-				var theme = ImportTheme(file);
-				if (theme != null)
-				{
-					items.Add(Path.GetFileNameWithoutExtension(file), theme);
-				}
-			}
-
-			return items;
-		}
-
-		private static LayoutModel ImportLayout(string path)
-		{
-			try
-			{
-				var data = Import<LayoutData>(path);
-
-				if (data == null)
-				{
-					throw new Exception("Layout import failed!");
-				}
-
-				return new LayoutModel(data);
-			}
-			catch (Exception e)
-			{
-				MessageBox.Show(
-					"Cannot load '" + path + "': " + e.Message,
-					"Load failure!",
-					MessageBoxButton.OK,
-					MessageBoxImage.Error
-				);
-			}
-			return null;
-		}
-
-		private static ThemeModel ImportTheme(string path)
-		{
-			try
-			{
-				var data = Import<ThemeData>(path);
-
-				return new ThemeModel(data);
-			}
-			catch (Exception e)
-			{
-				MessageBox.Show(
-					"Cannot load '" + path + "': " + e.Message,
-					"Load failure!",
-					MessageBoxButton.OK,
-					MessageBoxImage.Error
-				);
-			}
-			return null;
-		}
-
-
-		private static T Import<T>(string path)
-		{
-			string layout = null;
-
-			if (!File.Exists(path))
-			{
-				MessageBox.Show(
-					"'" + path + "' does not exist!",
-					"File not found!",
-					MessageBoxButton.OK,
-					MessageBoxImage.Error
-				);
-
-				return default(T);
-			}
-
-			for (var i = 0; i < 32; i += 1)
-			{
-				try
-				{
-					layout = File.ReadAllText(path)
-						.Replace("\t", "  "); // The thing doesn't like tabs.
-
-					if (!string.IsNullOrEmpty(layout))
-					{
-						break;
-					}
-				}
-				catch
-				{
-					Thread.Sleep(100);
-				}
-			}
-
-			var data = _deserializer.Deserialize<T>(layout);
-			if (data == null)
-			{
-				throw new Exception("Failed to parse yaml!");
-			}
-			return data;
-		}
-	}
+        internal static async Task<DirectoryImport<T>> ReadDirectoryAsync<T>(string path, CancellationToken token)
+        {
+            var result = new DirectoryImport<T>(path);
+            string[] files;
+            try { files = Directory.GetFiles(path, AppState.ConfigExtension); }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            { result.Error = e.Message; return result; }
+            Array.Sort(files, StringComparer.Ordinal);
+            foreach (var file in files)
+                result.Files.Add(await ReadAsync<T>(file, token).ConfigureAwait(false));
+            return result;
+        }
+    }
 }

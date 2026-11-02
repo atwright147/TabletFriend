@@ -185,6 +185,43 @@ buttons:
 
 Note that unmodified 1.0 layouts and themes will still function but may get rendered differently.
 
+## Building from source
+
+Build on Windows with the [.NET 7 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) for your processor architecture. The project targets `net7.0-windows`; running the app and tests also requires the .NET 7 Windows Desktop runtime, which the Windows .NET 7 SDK includes. A runtime-only installation cannot build the project.
+
+Install [Task](https://taskfile.dev/docs/installation), then reopen your terminal:
+
+```powershell
+winget install Task.Task
+```
+
+From the repository root:
+
+```powershell
+task --list     # Show available tasks
+task build      # Restore and build in Release mode (also the default task)
+task test       # Restore, build, and run regression tests
+task run        # Build and launch; open the toolbar through its tray icon
+```
+
+`task restore` restores packages without building. `task clean` cleans generated build outputs. To use Debug mode, run `task build CONFIGURATION=Debug` (the same setting works for test, run, and clean).
+
+The Release executable is `TabletFriend/TabletFriend/bin/Release/net7.0-windows/TabletFriend.exe`. Keep the adjacent DLLs and `files` directory together when running it. This build requires the .NET runtime; it is not a self-contained distribution.
+
+If your SDK is not on `PATH`, pass its executable explicitly:
+
+```powershell
+task build "DOTNET=C:/path/to/dotnet.exe"
+```
+
+Task is optional; the equivalent build command is:
+
+```powershell
+dotnet build TabletFriend/TabletFriend.sln --configuration Release
+```
+
+See [testing instructions](docs/testing.md) for test coverage and desktop checks.
+
 ## Making Tablet Friend better
 
 Tablet Friend is opensource, licensed under MIT and 100% free. You can help out the development by submitting your own toolbars to the [issues](https://github.com/Martenfur/TabletFriend/issues) board or helping out with the code. 

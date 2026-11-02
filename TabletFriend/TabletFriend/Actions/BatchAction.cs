@@ -2,6 +2,7 @@
 
 namespace TabletFriend.Actions
 {
+	using System.Threading;
 	public class BatchAction : ButtonAction
 	{
 		private ButtonAction[] _actions;
@@ -11,11 +12,14 @@ namespace TabletFriend.Actions
 			_actions = actions;
 		}
 
-		public override async Task Invoke()
+		public override Task Invoke() => Invoke(ActionRunner.Token);
+
+		public override async Task Invoke(CancellationToken cancellationToken)
 		{
 			for (var i = 0; i < _actions.Length; i += 1)
 			{
-				await _actions[i].Invoke();
+				cancellationToken.ThrowIfCancellationRequested();
+				await _actions[i].Invoke(cancellationToken);
 			}
 		}
 

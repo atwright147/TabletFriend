@@ -2,6 +2,7 @@
 
 namespace TabletFriend.Actions
 {
+	using System.Threading;
 	public class WaitAction : ButtonAction
 	{
 		private int _delay;
@@ -12,7 +13,9 @@ namespace TabletFriend.Actions
 		}
 
 
-		public override async Task Invoke() =>
-			await Task.Delay(_delay);
+		public override Task Invoke() => Invoke(ActionRunner.Token);
+
+		public override Task Invoke(CancellationToken cancellationToken) =>
+			Task.Delay(_delay, cancellationToken);
 	}
 }

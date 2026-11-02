@@ -14,6 +14,6 @@ namespace TabletFriend.Actions
 		}
 
 		public override async Task Invoke() =>
-			await Simulate.Events().Release(_keys).Invoke();
+			await ToggleManager.Input.ReleaseAsync(_keys);
 	}
 }

@@ -5,8 +5,15 @@ using System.Windows.Automation;
 
 namespace TabletFriend
 {
-	public class AppFocusMonitor : IDisposable
+	public interface IAppFocusMonitor
 	{
+		event Action<string> OnAppChanged;
+		string FocusedApp { get; }
+	}
+
+	public class AppFocusMonitor : IDisposable, IAppFocusMonitor
+	{
+		private volatile bool _disposed;
 		public HashSet<string> IgnoredApps = new HashSet<string>
 		{
 			"TabletFriend",
@@ -25,6 +32,7 @@ namespace TabletFriend
 
 		private void OnFocusChanged(object sender, AutomationFocusChangedEventArgs e)
 		{
+			if (_disposed) return;
 			try
 			{
 				var focusedElement = (AutomationElement)sender;
@@ -47,6 +55,8 @@ namespace TabletFriend
 
 		public void Dispose()
 		{
+			if (_disposed) return;
+			_disposed = true;
 			Automation.RemoveAutomationFocusChangedEventHandler(OnFocusChanged);
 		}
 	}
