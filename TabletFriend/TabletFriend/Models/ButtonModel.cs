@@ -57,7 +57,8 @@ namespace TabletFriend.Models
 				else
 				{
 					var iconName = data.Icon.Replace("_", "").Replace("-", ""); // Sanitizing the icon.
-					if (Enum.TryParse<PackIconKind>(iconName, true, out var kind))
+					Icon = BuiltInIcon.Create(iconName);
+					if (Icon == null && Enum.TryParse<PackIconKind>(iconName, true, out var kind))
 					{
 						var ico = new PackIcon();
 						ico.Kind = kind;

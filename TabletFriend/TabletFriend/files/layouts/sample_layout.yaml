@@ -58,6 +58,9 @@ buttons:
 		# Tablet Friend has several thousand (yep, not a typo) icons built-in.
 		# You can browse the list over here: https://materialdesignicons.com/
 		# Just look up the names of the icons you like and type them here.
+		# Also built in: brush-plus, brush-minus, opacity-plus, opacity-minus.
+		# Names ignore case, hyphens and underscores (brush_plus also works).
+		# Icons only change appearance; action still defines the button's shortcut.
 		icon: content_copy
 		# Since we already have an icon, text will be displayed as a tooltip.
 		# If you don't want tooltips, simply remove the text property.
