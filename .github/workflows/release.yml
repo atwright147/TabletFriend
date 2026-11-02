@@ -3,6 +3,19 @@ name: Build release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag whose ZIPs will be replaced using the selected branch
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ inputs.release_tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
 
 permissions:
   contents: read
@@ -13,6 +26,17 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
+      - name: Verify target release exists
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:RELEASE_TAG)) {
+            throw 'An existing release tag is required.'
+          }
+          gh release view --json tagName -- "$env:RELEASE_TAG"
+
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -74,5 +98,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$env:RELEASE_TAG" "artifacts/TabletFriend-$env:RUNTIME.zip" --clobber
+        run: gh release upload --clobber -- "$env:RELEASE_TAG" "artifacts/TabletFriend-$env:RUNTIME.zip"

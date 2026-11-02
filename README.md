@@ -187,11 +187,21 @@ Note that unmodified 1.0 layouts and themes will still function but may get rend
 
 ## Release builds
 
-The [release workflow](.github/workflows/release.yml) runs only when a GitHub release is published, including pre-releases and releases published from drafts. Pushes, pull requests, tag creation alone, and draft saves do not trigger builds. The release's tagged commit must contain the workflow.
+The [release workflow](.github/workflows/release.yml) runs when a GitHub release is published, including pre-releases and releases published from drafts, or when started manually. Pushes, pull requests, tag creation alone, and draft saves do not trigger builds. For automatic release builds, the release's tagged commit must contain the workflow.
 
 After the regression tests pass on Windows x64, the workflow publishes self-contained builds for `win-x64` and `win-arm64` and attaches `TabletFriend-win-x64.zip` and `TabletFriend-win-arm64.zip` to the release. Both packages include the .NET runtime and the bundled layouts, themes, and icons. Extract the entire ZIP before running `TabletFriend.exe`. The ARM64 package is cross-compiled on the x64 runner; the workflow does not run ARM64 desktop acceptance tests.
 
 The workflow uses the SDK selected by `global.json` and the built-in `GITHUB_TOKEN` to upload release assets; no additional secret is required. Re-running a release build replaces its existing ZIP assets.
+
+To rebuild an existing release with new changes, commit and push those changes, then open **Actions → Build release → Run workflow**. Select the branch to build and enter the existing release tag in `release_tag`. The workflow checks that the release exists before testing and building. The manual trigger must first be committed to the repository's default branch to make this option available, and the selected branch must also contain it.
+
+You can also start it with GitHub CLI (replace `YOUR_BRANCH` and `EXISTING_TAG`):
+
+```powershell
+gh workflow run release.yml --ref YOUR_BRANCH -f release_tag=EXISTING_TAG
+```
+
+Manual runs build the selected branch's commit and replace the target release's ZIPs without moving its tag or changing its source archives. The rebuilt binaries may therefore differ from the tagged source. **Re-run all jobs** repeats the original commit; use **Run workflow** to include new commits. Builds targeting the same release are serialized to avoid overlapping uploads.
 
 ## Building from source
 

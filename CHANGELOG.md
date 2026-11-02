@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added a GitHub Actions workflow that tests and builds self-contained Windows x64 and ARM64 packages when a release is published, then attaches the ZIPs to that release.
+- Added a GitHub Actions workflow that tests and builds self-contained Windows x64 and ARM64 packages when a release is published, then attaches the ZIPs to that release. Manual runs can rebuild a selected branch and replace the ZIPs on an existing release without creating a new tag.
 - Added reliability regression tests, testing documentation, and Task commands for building, testing, and running the app.
 - Added layout validation with clearer errors for invalid button and spacer sizes.
 
