@@ -185,6 +185,14 @@ buttons:
 
 Note that unmodified 1.0 layouts and themes will still function but may get rendered differently.
 
+## Release builds
+
+The [release workflow](.github/workflows/release.yml) runs only when a GitHub release is published, including pre-releases and releases published from drafts. Pushes, pull requests, tag creation alone, and draft saves do not trigger builds. The release's tagged commit must contain the workflow.
+
+After the regression tests pass on Windows x64, the workflow publishes self-contained builds for `win-x64` and `win-arm64` and attaches `TabletFriend-win-x64.zip` and `TabletFriend-win-arm64.zip` to the release. Both packages include the .NET runtime and the bundled layouts, themes, and icons. Extract the entire ZIP before running `TabletFriend.exe`. The ARM64 package is cross-compiled on the x64 runner; the workflow does not run ARM64 desktop acceptance tests.
+
+The workflow uses the SDK selected by `global.json` and the built-in `GITHUB_TOKEN` to upload release assets; no additional secret is required. Re-running a release build replaces its existing ZIP assets.
+
 ## Building from source
 
 Build on Windows with the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) for your processor architecture. The repository selects SDK `10.0.403` in `global.json` and accepts newer patches within the `10.0.4xx` feature band. Preview SDKs are disabled. The application and tests target `net10.0-windows` and require the .NET 10 Windows Desktop runtime, which the Windows .NET 10 SDK includes. A runtime-only installation cannot build the project.

@@ -1,0 +1,78 @@
+name: Build release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run regression tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        run: dotnet test TabletFriend/TabletFriend.sln --configuration Release
+
+  build:
+    name: Package ${{ matrix.runtime }}
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [win-x64, win-arm64]
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      RUNTIME: ${{ matrix.runtime }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Publish self-contained application
+        run: >-
+          dotnet publish TabletFriend/TabletFriend/TabletFriend.csproj
+          --configuration Release
+          --runtime "$env:RUNTIME"
+          --self-contained true
+          --output "artifacts/$env:RUNTIME"
+          -p:DebugType=None
+          -p:DebugSymbols=false
+
+      - name: Package application
+        run: |
+          $publishPath = Join-Path 'artifacts' $env:RUNTIME
+          foreach ($required in @('TabletFriend.exe', 'coreclr.dll', 'PresentationFramework.dll', 'files/layouts/default.yaml', 'files/themes/default.yaml')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $publishPath $required))) {
+              throw "Missing release file: $required"
+            }
+          }
+          Compress-Archive -Path "$publishPath/*" -DestinationPath "artifacts/TabletFriend-$env:RUNTIME.zip" -Force
+
+      - name: Attach package to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$env:RELEASE_TAG" "artifacts/TabletFriend-$env:RUNTIME.zip" --clobber
