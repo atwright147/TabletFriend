@@ -1,6 +1,6 @@
 # Reliability regression tests
 
-Use a Windows .NET SDK and the .NET 7 Windows Desktop runtime. The application and tests deliberately retain `net7.0-windows`; this patch does not migrate the runtime.
+Use the Windows .NET 10 SDK (`10.0.403` or a newer `10.0.4xx` patch, as selected by `global.json`). The SDK includes the .NET 10 Windows Desktop runtime required by the application and tests, which target `net10.0-windows`.
 
 From the repository root:
 

@@ -187,7 +187,7 @@ Note that unmodified 1.0 layouts and themes will still function but may get rend
 
 ## Building from source
 
-Build on Windows with the [.NET 7 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) for your processor architecture. The project targets `net7.0-windows`; running the app and tests also requires the .NET 7 Windows Desktop runtime, which the Windows .NET 7 SDK includes. A runtime-only installation cannot build the project.
+Build on Windows with the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) for your processor architecture. The repository selects SDK `10.0.403` in `global.json` and accepts newer patches within the `10.0.4xx` feature band. Preview SDKs are disabled. The application and tests target `net10.0-windows` and require the .NET 10 Windows Desktop runtime, which the Windows .NET 10 SDK includes. A runtime-only installation cannot build the project.
 
 Install [Task](https://taskfile.dev/docs/installation), then reopen your terminal:
 
@@ -206,7 +206,7 @@ task run        # Build and launch; open the toolbar through its tray icon
 
 `task restore` restores packages without building. `task clean` cleans generated build outputs. To use Debug mode, run `task build CONFIGURATION=Debug` (the same setting works for test, run, and clean).
 
-The Release executable is `TabletFriend/TabletFriend/bin/Release/net7.0-windows/TabletFriend.exe`. Keep the adjacent DLLs and `files` directory together when running it. This build requires the .NET runtime; it is not a self-contained distribution.
+The Release executable is `TabletFriend/TabletFriend/bin/Release/net10.0-windows/TabletFriend.exe`. Keep the adjacent DLLs and `files` directory together when running it. This build requires the .NET 10 Windows Desktop runtime; it is not a self-contained distribution.
 
 If your SDK is not on `PATH`, pass its executable explicitly:
 

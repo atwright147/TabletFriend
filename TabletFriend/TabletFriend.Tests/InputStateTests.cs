@@ -35,7 +35,7 @@ namespace TabletFriend.Tests
             Assert.False(input.SimulationInProgress);
             await input.ReleaseAllAsync();
             Assert.False(input.IsHeld(KeyCode.LControl));
-            Assert.Equal("up:LControl", output.Events.Last());
+            Assert.Equal(("up", KeyCode.LControl), output.Events.Last());
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace TabletFriend.Tests
             await Task.WhenAll(first, second, shutdown).WaitAsync(TimeSpan.FromSeconds(5));
             await input.HoldAsync(KeyCode.LAlt);
             await input.ReleaseAllAsync();
-            Assert.Equal(new[] { "down:LControl", "up:LControl" }, output.Events);
+            Assert.Equal(new[] { ("down", KeyCode.LControl), ("up", KeyCode.LControl) }, output.Events);
             Assert.False(input.IsHeld(KeyCode.LControl));
         }
 
@@ -76,7 +76,7 @@ namespace TabletFriend.Tests
             var second = input.ToggleAsync(KeyCode.LControl);
             output.HoldGate.SetResult(true);
             await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.Equal(new[] { "down:LControl", "up:LControl" }, output.Events);
+            Assert.Equal(new[] { ("down", KeyCode.LControl), ("up", KeyCode.LControl) }, output.Events);
             Assert.False(input.IsHeld(KeyCode.LControl));
         }
 
@@ -89,8 +89,8 @@ namespace TabletFriend.Tests
             var shutdown = input.ReleaseAllAsync();
             await Assert.ThrowsAsync<AggregateException>(() => shutdown);
             Assert.Same(shutdown, input.ReleaseAllAsync());
-            Assert.Contains("up:LControl", output.Events);
-            Assert.Contains("up:LShift", output.Events);
+            Assert.Contains(("up", KeyCode.LControl), output.Events);
+            Assert.Contains(("up", KeyCode.LShift), output.Events);
             Assert.False(input.IsHeld(KeyCode.LShift));
             Assert.False(input.SimulationInProgress);
         }
@@ -99,13 +99,13 @@ namespace TabletFriend.Tests
 
         private sealed class FakeKeyboard : IKeyboardOutput
         {
-            public List<string> Events { get; } = new List<string>();
+            public List<(string Action, KeyCode Key)> Events { get; } = new List<(string Action, KeyCode Key)>();
             public bool FailHold;
             public KeyCode? FailRelease;
             public TaskCompletionSource<bool> HoldGate;
             public async Task HoldAsync(KeyCode[] keys)
             {
-                foreach (var key in keys) Events.Add("down:" + key);
+                foreach (var key in keys) Events.Add(("down", key));
                 if (HoldGate != null) await HoldGate.Task;
                 if (FailHold) throw new InvalidOperationException("Hold failed after partial injection");
             }
@@ -113,7 +113,7 @@ namespace TabletFriend.Tests
             {
                 foreach (var key in keys)
                 {
-                    Events.Add("up:" + key);
+                    Events.Add(("up", key));
                     if (key == FailRelease) throw new InvalidOperationException("Release failed");
                 }
                 return Task.CompletedTask;
