@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -105,13 +104,13 @@ namespace TabletFriend
 			}
 			Directory.CreateDirectory(versionedDownloadsPath);
 
-			using (var cliente = new WebClient())
+			foreach (var link in links)
 			{
-				foreach (var link in links)
-				{
-					var outFile = Path.Combine(versionedDownloadsPath, Path.GetFileName(link));
-					await cliente.DownloadFileTaskAsync(new Uri(link), outFile);
-				}
+				var outFile = Path.Combine(versionedDownloadsPath, Path.GetFileName(link));
+				using var download = await _client.GetAsync(link, HttpCompletionOption.ResponseHeadersRead);
+				download.EnsureSuccessStatusCode();
+				using var output = File.Create(outFile);
+				await download.Content.CopyToAsync(output);
 			}
 
 			MessageBox.Show(

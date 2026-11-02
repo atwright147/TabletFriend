@@ -97,7 +97,7 @@ namespace TabletFriend
 							.Replace("\t", "  "); // The thing doesn't like tabs.
 						break;
 					}
-					catch (Exception e)
+					catch (Exception)
 					{
 
 					}
