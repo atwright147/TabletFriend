@@ -2,7 +2,7 @@
 
 ![logo](icons/logo.png)
 
-### [DOWNLOAD](https://github.com/Martenfur/TabletFriend/releases/latest)
+### [DOWNLOAD](/TabletFriend/releases/latest)
 
 ### [SAMPLE LAYOUT](TabletFriend/TabletFriend/files/layouts/sample_layout.yaml)
 
@@ -31,21 +31,29 @@ Here's what Tablet Friend can do:
 
 ## Getting started
 
-Grab the latest release from [this page](https://github.com/Martenfur/TabletFriend/releases/latest), unzip it... and that's it! No multistep installations, no hassle, you can start using the thing right away. 
+Grab the latest release from [this page](/TabletFriend/releases/latest), unzip it... and that's it! No multistep installations, no hassle, you can start using the thing right away. 
 
 ## Making your own toolbars
 
-To use a custom icon, put a PNG or SVG file in `files/icons` and set the button's `icon` to its path, for example `icon: files/icons/my-icon.svg` or `icon: files/icons/my-icon.png`. Relative paths start from the Tablet Friend application directory; absolute paths also work. SVGs keep their original colours. Both formats support `icon_stretch: fit` (preserve proportions), `fill` (fill the button), and `none` (original size, the default). After changing an image, save the layout file again to reload it.
+Custom files live in your Windows **Documents\TabletFriend** folder, independently of where the app is installed or extracted. Redirected Documents folders (including OneDrive) are supported. Put layouts in `layouts`, themes in `themes`, and images in `icons`. The same custom files are used by installed and portable copies running under your Windows account.
+
+Bundled layouts and themes remain available. A custom `.yaml` file with the same name overrides the bundled version; deleting that custom file restores the bundled version. To edit an example, use **settings > open bundled examples...** and copy it into the corresponding custom folder first.
+
+To use a custom icon, put a PNG or SVG file in `Documents\TabletFriend\icons` and set the button's `icon` to its path, for example `icon: icons/my-icon.svg` or `icon: icons/my-icon.png`. Relative paths in custom layouts start from `Documents\TabletFriend`. Absolute paths and existing application-relative paths still work, including the legacy `files/icons/...` prefix. Custom images take precedence over application images for custom layouts. SVGs keep their original colours. Both formats support `icon_stretch: fit` (preserve proportions), `fill` (fill the button), and `none` (original size, the default). After changing an image, save the layout file again to reload it.
+
+On startup, Tablet Friend checks the running copy's old `files` folder and backups, plus `%APPDATA%\TabletFriend\files` and its backups. Known unchanged bundled files are skipped using hashes of current and historical versions (YAML line endings are normalized). Custom filenames are copied into Documents. Files with a bundled filename but unrecognized contents, conflicting files, and layouts from sources with conflicting icon assets are copied under `Documents\TabletFriend\Imports` for review. Each import folder includes its original location, a report, and the source images. Review these files, then copy the layouts/themes you want into the live custom folders and copy any required icons, adjusting paths for name conflicts. Review copies are not loaded automatically. Existing user files and originals are preserved.
+
+Migration runs once per legacy folder; failed copies retry on restart. Later edits should go in Documents. A startup tray notification gives the new location and migration counts; the tray menu can open the custom folder at any time. These migration checks do not search unrelated folders elsewhere on your computer.
 
 Let's be honest - the default toolbars will probably not be enough for you. But that's ok. It's you who knows best what you need, this is why Tablet Friend is a great toolbar constructor first and a great toolbar second.
 
-First, right-click the tray icon and press the 'open files directory' button. 
+First, right-click the tray icon, open `settings`, and press **open custom files directory...**.
 
 ![menu](docs/pics/menu.png)
 
-This will open a directory with a bunch of `.yaml` files. These are your toolbars - you can open them with any text editor you like. I know, I know, editing some config files directly may seem scary - luckily, Tablet Friend makes it as easy and intuitive as possible. 
+This opens `Documents\TabletFriend`. Inside it, the `layouts` folder contains your custom toolbar `.yaml` files. You can edit them with any text editor or copy a bundled example there to get started.
 
-Let's make a new toolbar - create a file named `my_toolbar.yaml` in the `toolbars` directory, open it and paste this inside:
+Let's make a new toolbar - create a file named `my_toolbar.yaml` in the `layouts` directory, open it and paste this inside:
 
 ```yaml
 buttons:
@@ -244,6 +252,6 @@ See [testing instructions](docs/testing.md) for test coverage and desktop checks
 
 ## Making Tablet Friend better
 
-Tablet Friend is opensource, licensed under MIT and 100% free. You can help out the development by submitting your own toolbars to the [issues](https://github.com/Martenfur/TabletFriend/issues) board or helping out with the code. 
+Tablet Friend is opensource, licensed under MIT and 100% free. You can help out the development by submitting your own toolbars to the [issues](/TabletFriend/issues) board or helping out with the code. 
 
 If you have any questions, you can contact me at `chaifoxes@gmail.com`

@@ -51,6 +51,8 @@ namespace TabletFriend
 			InitializeComponent();
 			MouseDown += OnMouseDown;
 
+			var migration = UserDataMigration.Run(AppState.FilesRoot,
+				UserDataMigration.LegacyRoots(AppState.CurrentDirectory, Installer.PreferredDirectory), BundledFiles.Current);
 			_file = new FileManager();
 
 			ToggleManager.Init();
@@ -72,6 +74,9 @@ namespace TabletFriend
 			_layoutSwitcher = new AutomaticLayoutSwitcher(focusMonitor);
 			_tray = new TrayManager(this, _layoutList, _themeList, focusMonitor);
 			_file.Errors += _tray.ShowError;
+			var notice = migration.Notice(AppState.FilesRoot);
+			if (notice != null) _tray.ShowInformation(notice);
+			if (migration.Errors.Count > 0) _tray.ShowError(string.Join(Environment.NewLine, migration.Errors));
 			_file.ReportPendingErrors();
 			if (AppState.Settings.ToolbarAutohideEnabled) ToolbarAutohider.StartWatching();
 

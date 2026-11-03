@@ -12,6 +12,8 @@
 
 ### Changed
 
+- Custom layouts, themes, and icons now live in Windows Documents\TabletFriend, shared by installed and portable copies. User layouts and themes override bundled files by name; remove an override to restore the bundled version. The tray menu opens custom files and bundled examples separately.
+- Legacy files and backups are copied on first use into the user folder without overwriting existing files. Known bundled versions are skipped; uncertain or conflicting files are preserved under Imports with reports for review. Original files remain intact, and repeated installations keep separate backups.
 - Updated the app and tests to .NET 10 and pinned the SDK through `global.json`.
 - Layout and theme changes now reload asynchronously, combine rapid file changes into one reload, and ignore outdated results.
 - Configuration and action errors now appear as nonmodal tray notifications.

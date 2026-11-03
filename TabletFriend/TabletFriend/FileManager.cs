@@ -22,6 +22,8 @@ namespace TabletFriend
 
         private readonly ConfigurationCache<LayoutData, LayoutModel> _layouts = new ConfigurationCache<LayoutData, LayoutModel>();
         private readonly ConfigurationCache<ThemeData, ThemeModel> _themes = new ConfigurationCache<ThemeData, ThemeModel>();
+        private readonly Dictionary<string, LayoutModel> _bundledLayouts = new Dictionary<string, LayoutModel>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, ThemeModel> _bundledThemes = new Dictionary<string, ThemeModel>(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentDictionary<string, byte> _changed = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
         private Dictionary<string, string> _lastErrors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private readonly string _root;
@@ -33,15 +35,27 @@ namespace TabletFriend
         public event Action<string> Errors;
         internal Task Completion => _reload.Completion;
 
-        public FileManager() : this(AppState.FilesRoot, Application.Current.Dispatcher) { }
+        public FileManager() : this(AppState.FilesRoot, Application.Current.Dispatcher, BundledFiles.Current) { }
 
-        internal FileManager(string root, Dispatcher dispatcher)
+        internal FileManager(string root, Dispatcher dispatcher, BundledFiles bundled = null)
         {
             _root = root;
             _dispatcher = dispatcher;
             _reload = new ReloadCoordinator<Snapshot>(ReadAsync,
                 action => _dispatcher.InvokeAsync(action).Task, snapshot => Publish(snapshot, true),
                 error => QueueErrors(error.Message));
+
+            if (bundled != null)
+            {
+                var errors = new Dictionary<string, string>();
+                var layouts = new ConfigurationCache<LayoutData, LayoutModel>();
+                var themes = new ConfigurationCache<ThemeData, ThemeModel>();
+                layouts.Apply(bundled.Read<LayoutData>("layouts"), data => new LayoutModel(data, bundledIcons: true), errors);
+                themes.Apply(bundled.Read<ThemeData>("themes"), data => new ThemeModel(data), errors);
+                _bundledLayouts = layouts.ByName();
+                _bundledThemes = themes.ByName();
+                if (errors.Count > 0) QueueErrors(string.Join(Environment.NewLine, errors.Values));
+            }
 
             // Preserve synchronous startup, but never construct a WPF object on a worker.
             var initial = Task.Run(() => ReadAsync(CancellationToken.None)).GetAwaiter().GetResult();
@@ -91,10 +105,10 @@ namespace TabletFriend
         {
             if (_disposed) return;
             var errors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            _layouts.Apply(snapshot.Layouts, data => new LayoutModel(data), errors);
+            _layouts.Apply(snapshot.Layouts, data => new LayoutModel(data, _root), errors);
             _themes.Apply(snapshot.Themes, data => new ThemeModel(data), errors);
-            AppState.Layouts = _layouts.ByName();
-            AppState.Themes = _themes.ByName();
+            AppState.Layouts = Overlay(_bundledLayouts, _layouts.ByName());
+            AppState.Themes = Overlay(_bundledThemes, _themes.ByName());
 
             foreach (var path in _changed.Keys)
                 if (_changed.TryRemove(path, out _)) _lastErrors.Remove(path);
@@ -113,6 +127,13 @@ namespace TabletFriend
                 EventBeacon.SendEvent(Events.FilesChanged);
             }
             if (newErrors.Length > 0) QueueErrors(string.Join(Environment.NewLine, newErrors));
+        }
+
+        private static Dictionary<string, T> Overlay<T>(Dictionary<string, T> bundled, Dictionary<string, T> custom)
+        {
+            var result = new Dictionary<string, T>(bundled, StringComparer.OrdinalIgnoreCase);
+            foreach (var entry in custom) result[entry.Key] = entry.Value;
+            return result;
         }
 
         private void QueueErrors(string errors)

@@ -20,5 +20,7 @@
 
   <ItemGroup>
     <None Update="files/**" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="files/**/*" LogicalName="Bundled/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Migration/bundled-hashes.json" LogicalName="Migration/bundled-hashes.json" />
   </ItemGroup>
 </Project>

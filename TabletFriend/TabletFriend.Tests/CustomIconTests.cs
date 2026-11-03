@@ -13,6 +13,45 @@ namespace TabletFriend.Tests
 {
     public class CustomIconTests
     {
+        [Fact]
+        public void BundledExamplesLoadEmbeddedImagesInsteadOfCustomOverrides()
+        {
+            Sta.Run(() =>
+            {
+                using var folder = new TestDirectory();
+                Directory.CreateDirectory(Path.Combine(folder.Path, "icons"));
+                var path = Path.Combine(folder.Path, "icons", "kot.png");
+                WritePng(path, Colors.Red);
+                using var personal = new ButtonModel(new ButtonData { Icon = "files/icons/kot.png" }, folder.Path);
+                using var bundled = new ButtonModel(new ButtonData { Icon = "files/icons/kot.png" }, folder.Path, bundledIcons: true);
+                var personalSource = Assert.IsType<BitmapImage>(Assert.IsType<Image>(personal.Icon).Source);
+                var bundledSource = Assert.IsType<BitmapImage>(Assert.IsType<Image>(bundled.Icon).Source);
+                Assert.Equal(1, personalSource.PixelWidth);
+                Assert.Equal(Colors.Red, Pixel(personalSource, 0, 0));
+                Assert.True(bundledSource.PixelWidth > 1);
+                Assert.True(bundledSource.IsFrozen);
+            });
+        }
+
+        [Fact]
+        public void CustomPathsSupportMigratedPrefixesAndLegacyFallbackWithoutChangingBundledIcons()
+        {
+            using var folder = new TestDirectory();
+            var user = Directory.CreateDirectory(Path.Combine(folder.Path, "custom")).FullName;
+            var app = Directory.CreateDirectory(Path.Combine(folder.Path, "application")).FullName;
+            Directory.CreateDirectory(Path.Combine(user, "icons"));
+            Directory.CreateDirectory(Path.Combine(app, "files", "icons"));
+            var personal = Path.Combine(user, "icons", "personal.svg");
+            var legacy = Path.Combine(app, "files", "icons", "legacy.png");
+            File.WriteAllText(personal, "icon");
+            File.WriteAllText(legacy, "icon");
+            Assert.Equal(personal, Path.GetFullPath(CustomIcon.ResolvePath("icons/personal.svg", user, app)));
+            Assert.Equal(personal, Path.GetFullPath(CustomIcon.ResolvePath("files/icons/personal.svg", user, app)));
+            Assert.Equal(legacy, Path.GetFullPath(CustomIcon.ResolvePath("files/icons/legacy.png", user, app)));
+            Assert.Equal(personal, CustomIcon.ResolvePath(personal, user, app));
+            Assert.Equal(Path.Combine(app, "icons/personal.svg"), CustomIcon.ResolvePath("icons/personal.svg", null, app));
+        }
+
         private const string Svg = """
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50">
               <g transform="translate(10 10)">

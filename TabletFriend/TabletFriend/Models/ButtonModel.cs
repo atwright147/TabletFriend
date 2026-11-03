@@ -34,7 +34,7 @@ namespace TabletFriend.Models
 
 		public ButtonModel() { }
 
-		public ButtonModel(ButtonData data)
+		public ButtonModel(ButtonData data, string iconRoot = null, bool bundledIcons = false)
 		{
 			if (data == null)
 			{
@@ -44,12 +44,13 @@ namespace TabletFriend.Models
 
 			if (!string.IsNullOrEmpty(data.Icon))
 			{
-				var iconPath = Path.Combine(AppState.CurrentDirectory, data.Icon);
-				if (!string.IsNullOrEmpty(Path.GetExtension(data.Icon)) && File.Exists(iconPath))
+				var iconPath = CustomIcon.ResolvePath(data.Icon, iconRoot, AppState.CurrentDirectory);
+				var bundledSource = bundledIcons ? CustomIcon.LoadBundled(data.Icon) : null;
+				if (bundledSource != null || (!string.IsNullOrEmpty(Path.GetExtension(data.Icon)) && File.Exists(iconPath)))
 				{
 					var ico = new Image();
 
-					ico.Source = CustomIcon.Load(iconPath);
+					ico.Source = bundledSource ?? CustomIcon.Load(iconPath);
 					ico.Stretch = (Stretch)data.IconStretch;
 
 					Icon = ico;

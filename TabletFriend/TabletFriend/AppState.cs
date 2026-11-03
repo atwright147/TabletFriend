@@ -9,9 +9,19 @@ namespace TabletFriend
 	{
 		public static readonly string CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
-		public static readonly string FilesRoot = Path.Combine(CurrentDirectory, "files");
-		public static readonly string LayoutsRoot = Path.Combine(CurrentDirectory, "files\\layouts");
-		public static readonly string ThemesRoot = Path.Combine(CurrentDirectory, "files\\themes");
+		public static readonly string BundledFilesRoot = Path.Combine(CurrentDirectory, "files");
+		public static readonly string FilesRoot = GetFilesRoot();
+		public static readonly string LayoutsRoot = Path.Combine(FilesRoot, "layouts");
+		public static readonly string ThemesRoot = Path.Combine(FilesRoot, "themes");
+
+		private static string GetFilesRoot()
+		{
+			var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
+				Environment.SpecialFolderOption.DoNotVerify);
+			if (string.IsNullOrEmpty(documents))
+				documents = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents");
+			return Path.Combine(documents, "TabletFriend");
+		}
 
 		public const string ConfigExtension = "*.yaml";
 

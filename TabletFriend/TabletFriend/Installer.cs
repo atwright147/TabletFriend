@@ -7,7 +7,7 @@ namespace TabletFriend
 {
 	public static class Installer
 	{
-		private static readonly string _preferredDirectory =
+		internal static readonly string PreferredDirectory =
 			Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TabletFriend");
 
 		public static bool TryInstall(bool firstLaunch)
@@ -16,7 +16,7 @@ namespace TabletFriend
 			{
 				return false;
 			}
-			if (AppState.CurrentDirectory.TrimEnd('\\') == _preferredDirectory.TrimEnd('\\'))
+			if (AppState.CurrentDirectory.TrimEnd('\\') == PreferredDirectory.TrimEnd('\\'))
 			{
 				return false;
 			}
@@ -30,29 +30,24 @@ namespace TabletFriend
 			{
 				try
 				{
-					if (Directory.Exists(_preferredDirectory))
+					if (Directory.Exists(PreferredDirectory))
 					{
 						MessageBox.Show(
-							"Another version of Tablet Friend detected. 'files' directory will be overwritten. " +
-							"Previous version's layouts, themes and icons will be moved to 'files.backup'. " +
+							"Another version of Tablet Friend detected. Bundled files will be updated. " +
+							"Previous files will be copied to a separate files.backup folder. " +
+							"Custom files are stored in Documents\\TabletFriend; uncertain legacy files are preserved there under Imports. " +
 							Environment.NewLine +
 							"WARNING: If you are updating from 1.0 to 2.0, layout and theme structure has been changed. " +
 							"If you have your own layouts you will need to update them manually. See https://github.com/Martenfur/TabletFriend#readme for the instructions.",
 							"Update",
 							MessageBoxButton.OK
 						);
-						if (Directory.Exists(Path.Combine(_preferredDirectory, "files")))
-						{
-							DirectoryCopy(
-								Path.Combine(_preferredDirectory, "files"),
-								Path.Combine(_preferredDirectory, "files.backup")
-							);
-						}
+						BackupLegacyFiles(PreferredDirectory);
 					}
-					DirectoryCopy(AppState.CurrentDirectory, _preferredDirectory, "*.dll");
-					DirectoryCopy(AppState.CurrentDirectory, _preferredDirectory, "*.exe");
-					DirectoryCopy(AppState.CurrentDirectory, _preferredDirectory, "*.json");
-					Process.Start(Path.Combine(_preferredDirectory, "TabletFriend.exe"));
+					DirectoryCopy(AppState.CurrentDirectory, PreferredDirectory, "*.dll", false);
+					DirectoryCopy(AppState.CurrentDirectory, PreferredDirectory, "*.exe", false);
+					DirectoryCopy(AppState.CurrentDirectory, PreferredDirectory, "*.json", false);
+					Process.Start(Path.Combine(PreferredDirectory, "TabletFriend.exe"));
 					return true;
 				}
 				catch (Exception e)
@@ -69,7 +64,17 @@ namespace TabletFriend
 		}
 
 
-		private static void DirectoryCopy(string sourceDirName, string destDirName, string pattern = "*.*")
+		internal static string BackupLegacyFiles(string directory)
+		{
+			var source = Path.Combine(directory, "files");
+			if (!Directory.Exists(source)) return null;
+			var backup = Path.Combine(directory, "files.backup");
+			if (Directory.Exists(backup) || File.Exists(backup)) backup += "." + DateTime.UtcNow.ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N");
+			DirectoryCopy(source, backup);
+			return backup;
+		}
+
+		private static void DirectoryCopy(string sourceDirName, string destDirName, string pattern = "*.*", bool includeBackups = true)
 		{
 			// Get the subdirectories for the specified directory.
 			DirectoryInfo dir = new DirectoryInfo(sourceDirName);
@@ -97,8 +102,9 @@ namespace TabletFriend
 
 			foreach (DirectoryInfo subdir in dirs)
 			{
+				if (!includeBackups && subdir.Name.StartsWith("files.backup", StringComparison.OrdinalIgnoreCase)) continue;
 				string tempPath = Path.Combine(destDirName, subdir.Name);
-				DirectoryCopy(subdir.FullName, tempPath);
+				DirectoryCopy(subdir.FullName, tempPath, includeBackups: includeBackups);
 			}
 		}
 	}

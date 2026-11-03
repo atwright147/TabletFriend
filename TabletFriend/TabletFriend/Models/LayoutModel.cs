@@ -26,7 +26,7 @@ namespace TabletFriend.Models
 		public string App;
 
 		public LayoutModel() { }
-		public LayoutModel(LayoutData data)
+		public LayoutModel(LayoutData data, string iconRoot = null, bool bundledIcons = false)
 		{
 			LayoutValidator.Validate(data, "layout");
 			ButtonSize = Math.Max(data.ButtonSize ?? ButtonSize, MinButtonSize);
@@ -45,7 +45,7 @@ namespace TabletFriend.Models
 
 			foreach (var button in data.Buttons)
 			{
-				Buttons.Add(new ButtonModel(button.Value));
+				Buttons.Add(new ButtonModel(button.Value, iconRoot, bundledIcons));
 			}
 
 			for(var i = 0; i < Buttons.Count; i += 1)

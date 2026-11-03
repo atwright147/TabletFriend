@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using Xunit;
@@ -9,6 +10,51 @@ namespace TabletFriend.Tests
 {
     public class FileManagerTests
     {
+        [Fact]
+        public void CustomOverridesReloadAndDeletionRestoresBundledLayoutAndTheme()
+        {
+            Sta.Run(async () =>
+            {
+                using var folder = new TestDirectory();
+                var layouts = Directory.CreateDirectory(Path.Combine(folder.Path, "layouts")).FullName;
+                var themes = Directory.CreateDirectory(Path.Combine(folder.Path, "themes")).FullName;
+                var catalog = new BundledFiles(new Dictionary<string, byte[]>
+                {
+                    ["layouts/default.yaml"] = Encoding.UTF8.GetBytes("button_size: 20\nbuttons: {}\n"),
+                    ["themes/default.yaml"] = Encoding.UTF8.GetBytes("rounding: 5\n")
+                });
+                var path = Path.Combine(layouts, "default.yaml");
+                var themePath = Path.Combine(themes, "DEFAULT.yaml");
+                File.WriteAllText(path, "button_size: 30\nbuttons: {}\n");
+                File.WriteAllText(themePath, "rounding: 10\n");
+                using var manager = new FileManager(folder.Path, Dispatcher.CurrentDispatcher, catalog);
+                Assert.Single(AppState.Layouts);
+                Assert.Single(AppState.Themes);
+                Assert.Equal(30, AppState.Layouts["default"].ButtonSize);
+                Assert.Equal(10, AppState.Themes["default"].Rounding);
+                var original = AppState.Layouts["default"];
+                var errors = new List<string>();
+                manager.Errors += errors.Add;
+                File.WriteAllText(path, "buttons:\n  invalid:\n    size: 0,1\n");
+                await WaitUntil(() => errors.Count > 0);
+                Assert.Same(original, AppState.Layouts["default"]);
+                File.Delete(path);
+                File.Delete(themePath);
+                await WaitUntil(() => AppState.Layouts["default"].ButtonSize == 20 && AppState.Themes["default"].Rounding == 5);
+                Assert.Equal("default", AppState.CurrentLayoutName);
+                File.WriteAllText(path, "button_size: 40\nbuttons: {}\n");
+                await WaitUntil(() => AppState.Layouts["default"].ButtonSize == 40);
+                // Imports are preserved for review, never added to the live menus.
+                var imports = Directory.CreateDirectory(Path.Combine(folder.Path, "Imports", "old", "layouts")).FullName;
+                File.WriteAllText(Path.Combine(imports, "review.yaml"), "buttons: {}\n");
+                manager.NotifyChanged(Path.Combine(imports, "review.yaml"));
+                await manager.Completion;
+                Assert.False(AppState.Layouts.ContainsKey("review"));
+                manager.Dispose();
+                await manager.Completion;
+            });
+        }
+
         [Fact]
         public void WatcherPublishesRenameDeletionAndSelectionChangesOnDispatcher()
         {

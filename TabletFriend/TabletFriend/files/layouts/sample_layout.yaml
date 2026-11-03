@@ -199,8 +199,9 @@ buttons:
 
 	kot1:
 		# You can use your own PNG or SVG icons instead of built-in ones.
-		# For example: icon: files/icons/my-icon.svg
-		# Paths are relative to the application directory (absolute paths also work).
+		# Put images in Documents/TabletFriend/icons, then use icon: icons/my-icon.svg
+		# Custom paths start from Documents/TabletFriend; legacy files/icons paths still work.
+		# Copy this layout to Documents/TabletFriend/layouts before editing it.
 		icon: files/icons/kot.png
 		style: accent
 		size: 2,2

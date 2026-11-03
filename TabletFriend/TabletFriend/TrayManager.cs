@@ -79,6 +79,11 @@ namespace TabletFriend
 			if (!_disposed) _icon?.ShowBalloonTip("Tablet Friend", message, BalloonIcon.Warning);
 		}
 
+		public void ShowInformation(string message)
+		{
+			if (!_disposed) _icon?.ShowBalloonTip("Tablet Friend", message, BalloonIcon.Info);
+		}
+
 		public void Dispose()
 		{
 			if (_disposed) return;
@@ -140,7 +145,8 @@ namespace TabletFriend
 			}
 
 
-			AddSubmenuItem(settings, "open files directory...", OnOpenLayoutsDirectory);
+			AddSubmenuItem(settings, "open custom files directory...", OnOpenLayoutsDirectory);
+			AddSubmenuItem(settings, "open bundled examples...", OnOpenBundledDirectory);
 			_focusedApp = AddSubmenuItem(settings, "focused app: " + (_focusMonitor.FocusedApp ?? "none"));
 			_menu.Items.Add(settings);
 
@@ -267,10 +273,15 @@ namespace TabletFriend
 		{
 			var startInfo = new ProcessStartInfo()
 			{
-				Arguments = Path.Combine(AppState.CurrentDirectory, "files"),
+				Arguments = '"' + AppState.FilesRoot + '"',
 				FileName = "explorer.exe"
 			};
 			Process.Start(startInfo);
+		}
+
+		private void OnOpenBundledDirectory(object sender, RoutedEventArgs e)
+		{
+			Process.Start(new ProcessStartInfo("explorer.exe", '"' + AppState.BundledFilesRoot + '"'));
 		}
 
 

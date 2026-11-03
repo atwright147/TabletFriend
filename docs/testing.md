@@ -17,15 +17,19 @@ dotnet test TabletFriend/TabletFriend.sln -c Release --no-restore
 
 The suite uses fake keyboard output, temporary configuration directories, and STA threads for WPF objects. It does not instantiate the main application window, inject real keys, modify autostart, or invoke the installer/updater.
 
-Coverage includes menu subscription lifetime; button/spacer dimensions and bundled layouts; last-valid configuration retention; rename/deletion and fallback selection; real filesystem notifications; debounce and stale-result rejection; disposal; input serialization/failures; and cancellation of nested action batches.
+Coverage includes menu subscription lifetime; button/spacer dimensions and bundled layouts; last-valid configuration retention; rename/deletion and fallback selection; real filesystem notifications; debounce and stale-result rejection; disposal; input serialization/failures; cancellation of nested action batches; embedded defaults and custom overrides; and migration classification, conflicts, retries, repeat runs, and preservation of original files and installer backups. Migration and backup tests use temporary directories, never the real Documents or installed application folders.
 
-For desktop acceptance testing, run a separate copy of the build with `add_to_autostart`, `first_launch`, and `update_checking_enabled` set to `false` in its settings. Open the toolbar through its tray icon, then check:
+For desktop acceptance testing, use a disposable Windows test account: installed and portable builds share that account's real Documents\TabletFriend folder and scan its old AppData installation. Run a separate copy of the build with `add_to_autostart`, `first_launch`, and `update_checking_enabled` set to `false` in its settings. Open the toolbar through its tray icon, then check:
 
 - Editing, renaming, and deleting layouts refreshes both menus without freezing the toolbar.
 - Invalid edits retain the displayed toolbar and produce a nonmodal error; correcting the file reloads it.
 - Layout/theme switching, per-app layouts, and docking still render correctly.
+- Both tray folder commands open the expected locations, including redirected Documents and paths with spaces. Copy a bundled layout/theme into the custom folder, edit it, and verify it overrides the bundled version. Delete the override and verify the bundled version returns; malformed overrides retain the last valid model.
+- Before the first run, put a new layout/theme/icon, a known stock layout, and an edited stock layout in the old installation's files folder and files.backup. Verify custom names import, known stock files are skipped, and uncertain files/conflicts go into Imports with reports and source images. Originals and existing user edits must survive. Restart and verify intentionally deleted imports are not recreated; updates must retain earlier backups. Check migration notices and recovery after a locked source file is released.
 - Custom PNG and SVG paths render side by side, including paths with spaces and uppercase `.SVG` extensions. Check `icon_stretch: none`, `fit`, and `fill`, SVG colours and transparent padding, and launching from another working directory. After replacing an SVG, save the layout to reload it; malformed SVGs should retain the previous toolbar and report the affected icon path, then recover after correction and another layout save.
 - Toggle Ctrl or explicitly hold Shift, quit through the tray, and confirm normal typing in a neutral editor.
 - Closing during a waiting action batch cancels subsequent steps; no stale tray icon remains.
 
 Forced process termination is outside the graceful key-release guarantee. Never test held keys against an unsaved working document.
+
+Historical bundled fingerprints are committed in `TabletFriend/TabletFriend/Migration/bundled-hashes.json`. After fetching additional historical release commits, run `pwsh -File scripts/Update-BundledHashes.ps1` from the repository root to add their fingerprints. The script retains previously known hashes, including in shallow checkouts. Current bundled files are fingerprinted directly from embedded resources, so editing a bundled example does not require regenerating the historical manifest.
