@@ -142,7 +142,8 @@ namespace TabletFriend
 			if (errors.Count > 0) throw new AggregateException(errors);
 		}
 
-		internal Task WaitForCallbacksAsync() => _file?.Completion ?? Task.CompletedTask;
+		internal Task WaitForCallbacksAsync() => Task.WhenAll(
+			_file?.Completion ?? Task.CompletedTask, _focusMonitor?.Completion ?? Task.CompletedTask);
 
 		internal void FinishCleanup()
 		{

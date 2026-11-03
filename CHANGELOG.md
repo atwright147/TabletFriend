@@ -24,7 +24,7 @@
 - PNG icons no longer keep their source files locked or show cached contents after the image is replaced and the layout is reloaded.
 - Invalid layout and theme edits now retain the last valid configuration. Renamed or deleted files refresh the menus and select an available fallback when needed.
 - Held and toggled keys now share consistent state tracking and are released during graceful shutdown. Pending action batches are cancelled when closing the app.
-- Fixed repeated tray menu event subscriptions and cleaned up file watchers, timers, and focus monitoring on shutdown.
+- Fixed repeated tray menu event subscriptions and cleaned up file watchers, timers, and focus monitoring on shutdown. Focus monitoring now registers and unregisters off the UI thread so Quit can finish without freezing.
 - Buttons and spacers without an explicit size now default to `1,1`.
 - Installation now shuts down the original instance gracefully after a successful move to AppData and keeps it running if installation fails.
 

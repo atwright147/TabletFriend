@@ -28,7 +28,7 @@ For desktop acceptance testing, use a disposable Windows test account: installed
 - Before the first run, put a new layout/theme/icon, a known stock layout, and an edited stock layout in the old installation's files folder and files.backup. Verify custom names import, known stock files are skipped, and uncertain files/conflicts go into Imports with reports and source images. Originals and existing user edits must survive. Restart and verify intentionally deleted imports are not recreated; updates must retain earlier backups. Check migration notices and recovery after a locked source file is released.
 - Custom PNG and SVG paths render side by side, including paths with spaces and uppercase `.SVG` extensions. Check `icon_stretch: none`, `fit`, and `fill`, SVG colours and transparent padding, and launching from another working directory. After replacing an SVG, save the layout to reload it; malformed SVGs should retain the previous toolbar and report the affected icon path, then recover after correction and another layout save.
 - Toggle Ctrl or explicitly hold Shift, quit through the tray, and confirm normal typing in a neutral editor.
-- Closing during a waiting action batch cancels subsequent steps; no stale tray icon remains.
+- Closing during a waiting action batch cancels subsequent steps; no stale tray icon remains. Check tray Quit with the toolbar hidden and visible, and immediately after launch. Switch focus between apps before quitting; the process should exit without freezing, including with per-app layouts enabled.
 
 Forced process termination is outside the graceful key-release guarantee. Never test held keys against an unsaved working document.
 
