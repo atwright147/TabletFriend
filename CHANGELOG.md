@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added custom SVG button icons alongside PNGs, using the same `icon` paths and `icon_stretch` options while preserving SVG colours and vector scaling.
 - Added built-in `brush-plus`, `brush-minus`, `opacity-plus`, and `opacity-minus` vector icons that follow the button's theme colour and can be selected by name in any layout. Editable Affinity sources and SVG exports are included in `icons/builtin`.
 - Added a GitHub Actions workflow that tests and builds self-contained Windows x64 and ARM64 packages when a release is published, then attaches the ZIPs to that release. Manual runs can rebuild a selected branch and replace the ZIPs on an existing release without creating a new tag.
 - Added reliability regression tests, testing documentation, and Task commands for building, testing, and running the app.
@@ -17,6 +18,8 @@
 
 ### Fixed
 
+- Custom icon paths now resolve consistently from the application directory even when Tablet Friend is launched from another working directory.
+- PNG icons no longer keep their source files locked or show cached contents after the image is replaced and the layout is reloaded.
 - Invalid layout and theme edits now retain the last valid configuration. Renamed or deleted files refresh the menus and select an available fallback when needed.
 - Held and toggled keys now share consistent state tracking and are released during graceful shutdown. Pending action batches are cancelled when closing the app.
 - Fixed repeated tray menu event subscriptions and cleaned up file watchers, timers, and focus monitoring on shutdown.

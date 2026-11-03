@@ -198,7 +198,9 @@ buttons:
 		style: default
 
 	kot1:
-		# You сan use png icons if you're not happy with built-in ones.
+		# You can use your own PNG or SVG icons instead of built-in ones.
+		# For example: icon: files/icons/my-icon.svg
+		# Paths are relative to the application directory (absolute paths also work).
 		icon: files/icons/kot.png
 		style: accent
 		size: 2,2

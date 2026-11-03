@@ -24,6 +24,7 @@ For desktop acceptance testing, run a separate copy of the build with `add_to_au
 - Editing, renaming, and deleting layouts refreshes both menus without freezing the toolbar.
 - Invalid edits retain the displayed toolbar and produce a nonmodal error; correcting the file reloads it.
 - Layout/theme switching, per-app layouts, and docking still render correctly.
+- Custom PNG and SVG paths render side by side, including paths with spaces and uppercase `.SVG` extensions. Check `icon_stretch: none`, `fit`, and `fill`, SVG colours and transparent padding, and launching from another working directory. After replacing an SVG, save the layout to reload it; malformed SVGs should retain the previous toolbar and report the affected icon path, then recover after correction and another layout save.
 - Toggle Ctrl or explicitly hold Shift, quit through the tray, and confirm normal typing in a neutral editor.
 - Closing during a waiting action batch cancels subsequent steps; no stale tray icon remains.
 

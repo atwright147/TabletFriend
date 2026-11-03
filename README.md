@@ -23,7 +23,7 @@ Here's what Tablet Friend can do:
 - Execute command line commands - this allows you to launch any programs you wish or make custom scripts that do exactly what you want. Batch, Powershell - the sky is the limit.
 - Swap and link layouts seamlessly.
 - Chain any number of actions.
-- Use over 4000 built-in vector icons from [https://materialdesignicons.com](https://materialdesignicons.com) or arbitrary png icons.
+- Use over 4000 built-in vector icons from [https://materialdesignicons.com](https://materialdesignicons.com) or your own PNG and SVG icons.
 - Dock the toolbar to the side or on top.
 - Simply look nice. :)
 
@@ -34,6 +34,8 @@ Here's what Tablet Friend can do:
 Grab the latest release from [this page](https://github.com/Martenfur/TabletFriend/releases/latest), unzip it... and that's it! No multistep installations, no hassle, you can start using the thing right away. 
 
 ## Making your own toolbars
+
+To use a custom icon, put a PNG or SVG file in `files/icons` and set the button's `icon` to its path, for example `icon: files/icons/my-icon.svg` or `icon: files/icons/my-icon.png`. Relative paths start from the Tablet Friend application directory; absolute paths also work. SVGs keep their original colours. Both formats support `icon_stretch: fit` (preserve proportions), `fill` (fill the button), and `none` (original size, the default). After changing an image, save the layout file again to reload it.
 
 Let's be honest - the default toolbars will probably not be enough for you. But that's ok. It's you who knows best what you need, this is why Tablet Friend is a great toolbar constructor first and a great toolbar second.
 

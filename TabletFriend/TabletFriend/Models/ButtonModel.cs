@@ -4,7 +4,6 @@ using System.IO;
 using System.Numerics;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using TabletFriend.Actions;
 using TabletFriend.Data;
 
@@ -45,11 +44,12 @@ namespace TabletFriend.Models
 
 			if (!string.IsNullOrEmpty(data.Icon))
 			{
-				if (!string.IsNullOrEmpty(Path.GetExtension(data.Icon)) && File.Exists(data.Icon))
+				var iconPath = Path.Combine(AppState.CurrentDirectory, data.Icon);
+				if (!string.IsNullOrEmpty(Path.GetExtension(data.Icon)) && File.Exists(iconPath))
 				{
 					var ico = new Image();
 
-					ico.Source = new BitmapImage(new Uri(Path.Combine(AppState.CurrentDirectory, data.Icon)));
+					ico.Source = CustomIcon.Load(iconPath);
 					ico.Stretch = (Stretch)data.IconStretch;
 
 					Icon = ico;
