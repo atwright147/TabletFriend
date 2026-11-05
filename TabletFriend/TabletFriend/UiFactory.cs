@@ -98,21 +98,11 @@ namespace TabletFriend
 			}
 
 			var offset = Vector2.Zero;
-			if (AppState.Settings.DockingMode != DockingMode.None)
-			{
-				if (AppState.Settings.DockingMode == DockingMode.Top || AppState.Settings.DockingMode == DockingMode.Bottom)
-				{
-					offset.X = (float)(SystemParameters.PrimaryScreenWidth - newWidth) / 2;
-				}
-				else
-				{
-					offset.Y = (float)(SystemParameters.PrimaryScreenHeight - newHeight) / 2;
-				}
-			}
-			else
+			if (!isDocked)
 			{
 				offset.Y = (float)titlebarHeight;
 			}
+			window.MainCanvas.SetLayout(AppState.Settings.DockingMode, new Size(newWidth, newHeight));
 
 			if (AppState.Settings.DockingMode != DockingMode.None)
 			{

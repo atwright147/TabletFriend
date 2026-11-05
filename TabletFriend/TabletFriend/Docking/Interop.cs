@@ -9,6 +9,14 @@ namespace WpfAppBar
 {
 	class Interop
 	{
+		internal const int WM_SETTINGCHANGE = 0x001A;
+		internal const int WM_WINDOWPOSCHANGED = 0x0047;
+		internal const int WM_DISPLAYCHANGE = 0x007E;
+		internal const int WM_DPICHANGED = 0x02E0;
+		internal const int SM_CXSCREEN = 0;
+		internal const int SM_CYSCREEN = 1;
+		internal const uint SPI_GETWORKAREA = 0x0030;
+
 		[StructLayout(LayoutKind.Sequential)]
 		internal struct RECT
 		{
@@ -79,7 +87,14 @@ namespace WpfAppBar
 		}
 
 		[DllImport("SHELL32", CallingConvention = CallingConvention.StdCall)]
-		internal static extern uint SHAppBarMessage(int dwMessage, ref APPBARDATA pData);
+		internal static extern UIntPtr SHAppBarMessage(int dwMessage, ref APPBARDATA pData);
+
+		[DllImport("User32.dll")]
+		internal static extern int GetSystemMetrics(int index);
+
+		[DllImport("User32.dll", CharSet = CharSet.Unicode)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		internal static extern bool SystemParametersInfo(uint action, uint parameter, out RECT value, uint flags);
 
 		[DllImport("User32.dll", CharSet = CharSet.Auto)]
 		internal static extern int RegisterWindowMessage(string msg);

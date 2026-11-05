@@ -33,6 +33,8 @@ Here's what Tablet Friend can do:
 
 Grab the latest release from [this page](/TabletFriend/releases/latest), unzip it... and that's it! No multistep installations, no hassle, you can start using the thing right away. 
 
+Toolbar autohide is enabled by default: the toolbar follows Windows' tablet-mode signal to show in tablet mode and hide in desktop mode. To keep it visible in both modes, right-click its tray icon and choose **settings > disable toolbar autohide**. Left-click the tray icon to hide or show it manually.
+
 ## Making your own toolbars
 
 Custom files live in your Windows **Documents\TabletFriend** folder, independently of where the app is installed or extracted. Redirected Documents folders (including OneDrive) are supported. Put layouts in `layouts`, themes in `themes`, and images in `icons`. The same custom files are used by installed and portable copies running under your Windows account.

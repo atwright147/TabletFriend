@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TabletFriend"
+        xmlns:docking="clr-namespace:TabletFriend.Docking"
 		xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="MainWindow" Height="300" Width="200" 
@@ -15,7 +16,7 @@
         Visibility="Hidden"
 		>
 	<Border Name="MainBorder">
-		<Canvas Name="MainCanvas"></Canvas>
+		<docking:ToolbarCanvas x:Name="MainCanvas" />
 	</Border>
 	<Window.Triggers>
 		<EventTrigger RoutedEvent="Window.MouseEnter">
