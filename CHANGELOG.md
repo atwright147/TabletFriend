@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added opt-in press-and-hold buttons for mouse, touch, and pen, with optional quick-tap locking and a configurable tap threshold. Held keys release when these controls hide or rebuild and during graceful shutdown.
+- Added opt-in press-and-hold buttons for mouse, touch, and pen, with optional quick-tap locking and a configurable tap threshold. Enabled native Windows pointer input to receive touch contact durations. Touch/pen holds suppress the toolbar context menu while intentional mouse right-clicks remain available. Held keys release when these controls hide or rebuild and during graceful shutdown.
 - Added custom SVG button icons alongside PNGs, using the same `icon` paths and `icon_stretch` options while preserving SVG colours and vector scaling.
 - Added built-in `brush-plus`, `brush-minus`, `opacity-plus`, and `opacity-minus` vector icons that follow the button's theme colour and can be selected by name in any layout. Editable Affinity sources and SVG exports are included in `icons/builtin`.
 - Added a GitHub Actions workflow that tests and builds self-contained Windows x64 and ARM64 packages when a release is published, then attaches the ZIPs to that release. Manual runs can rebuild a selected branch and replace the ZIPs on an existing release without creating a new tag.

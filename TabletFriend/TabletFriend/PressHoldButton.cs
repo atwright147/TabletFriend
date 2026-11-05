@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using WindowsInput.Events;
@@ -16,6 +17,7 @@ namespace TabletFriend
         private InputDevice _pointer;
         private bool _subscribed;
         private bool _detached;
+        private bool _mouseContextMenuRequested;
 
         internal PressHoldButton(InputStateService input, KeyCode[] keys, bool quickToggle, int thresholdMs,
             Func<TimeSpan> now = null, Func<Func<Task>, Task> run = null,
@@ -37,6 +39,34 @@ namespace TabletFriend
         // State is driven by keyboard ownership, never by ToggleButton's default click logic.
         protected override void OnToggle() { }
         protected override void OnClick() { }
+
+        protected override void OnPreviewMouseRightButtonDown(MouseButtonEventArgs e)
+        {
+            _mouseContextMenuRequested = _pointer == null && e.StylusDevice == null;
+            if (!_mouseContextMenuRequested) e.Handled = true;
+            else base.OnPreviewMouseRightButtonDown(e);
+        }
+
+        protected override void OnPreviewMouseRightButtonUp(MouseButtonEventArgs e)
+        {
+            if (_pointer != null || e.StylusDevice != null)
+            {
+                _mouseContextMenuRequested = false;
+                e.Handled = true;
+            }
+            else base.OnPreviewMouseRightButtonUp(e);
+        }
+
+        protected override void OnContextMenuOpening(ContextMenuEventArgs e)
+        {
+            // A touch driver can request a menu directly, even after touch-up. Only
+            // intentional mouse/keyboard requests may bubble to the window's menu.
+            var keyboardRequest = e.CursorLeft == -1 && e.CursorTop == -1;
+            if (_pointer != null || (!keyboardRequest && !_mouseContextMenuRequested))
+                e.Handled = true;
+            _mouseContextMenuRequested = false;
+            base.OnContextMenuOpening(e);
+        }
 
         protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
         {
@@ -105,6 +135,7 @@ namespace TabletFriend
         private void Begin(InputDevice pointer)
         {
             if (_detached || _pointer != null || !IsEnabled) return;
+            _mouseContextMenuRequested = false;
             _pointer = pointer;
             if (!_capture(pointer)) { _pointer = null; return; }
             if (!ReferenceEquals(_pointer, pointer)) return;
