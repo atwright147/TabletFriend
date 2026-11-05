@@ -7,6 +7,7 @@ namespace TabletFriend.Actions
 	public class KeyAction : ButtonAction
 	{
 		private readonly KeyCode[] _keys;
+		internal KeyCode[] Keys => (KeyCode[])_keys.Clone();
 
 		public KeyAction(params KeyCode[] keys)
 		{

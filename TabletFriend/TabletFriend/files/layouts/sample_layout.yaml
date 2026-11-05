@@ -82,6 +82,17 @@ buttons:
 		spacer: true
 		size: 4,2
 
+	# Hold Ctrl while touching the button, or tap quickly to lock/unlock it.
+	# Set quick_press_toggle to false (or omit it) for hold-only behavior.
+	# These options require a plain key/chord action, not a prefix or actions batch.
+	ctrl_hold:
+		action: ctrl
+		text: Ctrl
+		press_and_hold: true
+		quick_press_toggle: true
+		quick_press_threshold_ms: 250 # Positive milliseconds; shorter taps lock.
+		size: 4,2
+
 	shift:
 		action: toggle shift # Instead of pressing once, this button will be on toggle.
 		style: outlined

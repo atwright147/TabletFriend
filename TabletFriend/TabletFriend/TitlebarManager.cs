@@ -137,6 +137,8 @@ namespace TabletFriend
 		{
 			if (!_minimized)
 			{
+				foreach (var child in _window.MainCanvas.Children)
+					if (child is PressHoldButton heldButton) heldButton.Cancel();
 				_minimized = true;
 				_maximizedWindowHeight = _window.Height;
 				_window.Height = GetTitlebarHeight(_layout);

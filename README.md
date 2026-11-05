@@ -33,6 +33,26 @@ Here's what Tablet Friend can do:
 
 Grab the latest release from [this page](/TabletFriend/releases/latest), unzip it... and that's it! No multistep installations, no hassle, you can start using the thing right away. 
 
+## Press and hold, with optional tap locking
+
+Add `press_and_hold: true` to a plain key button to hold its key or chord while your finger, pen, or left mouse button is down. Add `quick_press_toggle: true` to let a quick tap keep it enabled:
+
+```yaml
+buttons:
+  ctrl:
+    action: ctrl
+    text: Ctrl
+    press_and_hold: true
+    quick_press_toggle: true
+    quick_press_threshold_ms: 250
+```
+
+The key goes down immediately. A tap shorter than 250 ms locks it on; another tap turns it off. A longer press releases on lifting, even if the key was already locked. The button highlights while its keys are held. Set `quick_press_toggle: false` (the default) for hold-only behavior. The optional threshold is a positive number of milliseconds; exactly the threshold counts as a long press.
+
+Use plain actions such as `ctrl`, `space`, or `ctrl+shift`. This mode does not accept prefixed actions (`toggle`, `hold`, `repeat`, etc.) or `actions` batches. Quick-tap locking requires `press_and_hold: true`. Existing buttons are unchanged unless you opt in; existing `hold`/`release` actions remain available for batches.
+
+Releasing outside the button or losing pointer capture cancels the press without locking. This mode's held and locked keys release when the toolbar hides, minimizes, or rebuilds (including layout/theme changes), or when the app quits normally. Simultaneous buttons can share a key without releasing each other's hold.
+
 ## Making your own toolbars
 
 Custom files live in your Windows **Documents\TabletFriend** folder, independently of where the app is installed or extracted. Redirected Documents folders (including OneDrive) are supported. Put layouts in `layouts`, themes in `themes`, and images in `icons`. The same custom files are used by installed and portable copies running under your Windows account.

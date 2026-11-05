@@ -12,6 +12,9 @@ namespace TabletFriend.Models
 	public class ButtonModel : IDisposable
 	{
 		public ButtonAction Action;
+		public bool PressAndHold;
+		public bool QuickPressToggle;
+		public int QuickPressThresholdMs = 250;
 
 		public string Text = "";
 		public object Icon;
@@ -75,8 +78,15 @@ namespace TabletFriend.Models
 			}
 
 			Spacer = data.Spacer;
+			PressAndHold = data.PressAndHold;
+			QuickPressToggle = data.QuickPressToggle;
+			QuickPressThresholdMs = data.QuickPressThresholdMs;
 
-			if (data.Actions == null || data.Actions.Length == 0)
+			if (Spacer)
+			{
+				Action = null;
+			}
+			else if (data.Actions == null || data.Actions.Length == 0)
 			{
 				Action = ButtonActionResolver.Resolve(data.Action);
 			}

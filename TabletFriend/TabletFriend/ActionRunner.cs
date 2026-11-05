@@ -58,6 +58,7 @@ namespace TabletFriend
             error => AppLifecycle.ReportError("Action failed: " + error.Message));
         public static CancellationToken Token => Execution.Token;
         public static Task RunAsync(ButtonAction action) => Execution.RunAsync(() => action.Invoke(Token));
+        public static Task RunAsync(Func<Task> invoke) => Execution.RunAsync(invoke);
         public static Task StopAsync() => Execution.StopAsync();
     }
 }

@@ -5,6 +5,9 @@ namespace TabletFriend.Data
 	{
 		public string Action;
 		public string[] Actions;
+		public bool PressAndHold;
+		public bool QuickPressToggle;
+		public int QuickPressThresholdMs = 250;
 		public string Text;
 		public string Icon;
 		public StretchData IconStretch;

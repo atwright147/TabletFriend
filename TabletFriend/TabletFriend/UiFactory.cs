@@ -22,6 +22,8 @@ namespace TabletFriend
 			ToggleManager.ClearButtons();
 			var theme = AppState.CurrentTheme;
 
+			foreach (var child in window.MainCanvas.Children)
+				if (child is PressHoldButton heldButton) heldButton.Detach();
 			window.MainCanvas.Children.Clear();
 
 			var isDocked = AppState.Settings.DockingMode != DockingMode.None;
@@ -199,7 +201,12 @@ namespace TabletFriend
 			var isToggle = button.Action is ToggleAction;
 			var isRepeat = button.Action is RepeatAction;
 
-			if (isToggle)
+			if (button.PressAndHold)
+			{
+				uiButton = new PressHoldButton(ToggleManager.Input, ((KeyAction)button.Action).Keys,
+					button.QuickPressToggle, button.QuickPressThresholdMs);
+			}
+			else if (isToggle)
 			{
 				uiButton = new ToggleButton();
 			}
@@ -271,7 +278,11 @@ namespace TabletFriend
 				style = theme.DefaultStyle;
 			}
 
-			if (isToggle)
+			if (button.PressAndHold)
+			{
+				uiButton.Style = Application.Current.Resources["toggle"] as Style;
+			}
+			else if (isToggle)
 			{
 				uiButton.Style = Application.Current.Resources["toggle"] as Style;
 
@@ -295,7 +306,7 @@ namespace TabletFriend
 				}
 			}
 
-			if (button.Action != null)
+			if (button.Action != null && !button.PressAndHold)
 			{
 				uiButton.Click += async (e, o) => await ActionRunner.RunAsync(button.Action);
 			}
