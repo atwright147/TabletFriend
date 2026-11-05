@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -78,7 +77,6 @@ namespace TabletFriend
 			if (notice != null) _tray.ShowInformation(notice);
 			if (migration.Errors.Count > 0) _tray.ShowError(string.Join(Environment.NewLine, migration.Errors));
 			_file.ReportPendingErrors();
-			if (AppState.Settings.ToolbarAutohideEnabled) ToolbarAutohider.StartWatching();
 
 
 			if (AppState.Settings.AddToAutostart)
@@ -115,7 +113,11 @@ namespace TabletFriend
 		{
 			if (AppLifecycle.IsShuttingDown) return;
 			if (Installer.TryInstall(_offerInstall)) await AppLifecycle.ShutdownAsync();
-			else _ = UpdateChecker.Check();
+			else
+			{
+				ToolbarAutohider.ApplySettings();
+				_ = UpdateChecker.Check();
+			}
 		}
 
 		protected override async void OnClosing(CancelEventArgs e)
@@ -271,8 +273,6 @@ namespace TabletFriend
 			EventBeacon.SendEvent(Events.DockingChanged, AppState.Settings.DockingMode);
 		}
 
-		private static bool _firstToggle = true;
-
 		private void OnToggleMinimize(object[] obj)
 		{
 			// Regular minimize doesn't work without the taskbar icon.
@@ -282,21 +282,7 @@ namespace TabletFriend
 			if (Visibility == Visibility.Collapsed || Visibility == Visibility.Hidden)
 			{
 				Visibility = Visibility.Visible;
-				if (!_firstToggle)
-				{				
-					AppBarFunctions.SetAppBar(this, AppState.Settings.DockingMode);
-				}
-				else
-				{
-					// On first launch the toolbar spergs out. This seems to fix it. Maybe. Mostly. :(
-					Thread.Sleep(500);
-					AppBarFunctions.SetAppBar(this, AppState.Settings.DockingMode);
-					Thread.Sleep(100);
-					AppBarFunctions.SetAppBar(this, DockingMode.None);
-					Thread.Sleep(100);
-					AppBarFunctions.SetAppBar(this, AppState.Settings.DockingMode);
-					_firstToggle = false;
-				}
+				AppBarFunctions.SetAppBar(this, AppState.Settings.DockingMode);
 			}
 			else
 			{

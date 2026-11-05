@@ -202,13 +202,12 @@ namespace TabletFriend
 			if (AppState.Settings.ToolbarAutohideEnabled)
 			{
 				_autohideMenuItem.Header = "disable toolbar autohide";
-				ToolbarAutohider.StartWatching();
 			}
 			else
 			{
 				_autohideMenuItem.Header = "enable toolbar autohide";
-				ToolbarAutohider.StopWatching();
 			}
+			ToolbarAutohider.ApplySettings();
 			EventBeacon.SendEvent(Events.UpdateSettings);
 		}
 

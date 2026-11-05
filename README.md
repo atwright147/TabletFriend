@@ -33,6 +33,8 @@ Here's what Tablet Friend can do:
 
 Grab the latest release from [this page](/TabletFriend/releases/latest), unzip it... and that's it! No multistep installations, no hassle, you can start using the thing right away. 
 
+Toolbar autohide is enabled by default: the toolbar follows Windows' tablet-mode signal to show in tablet mode and hide in desktop mode. To keep it visible in both modes, right-click its tray icon and choose **settings > disable toolbar autohide**. Left-click the tray icon to hide or show it manually.
+
 ## Press and hold, with optional tap locking
 
 Add `press_and_hold: true` to a plain key button to hold its key or chord while your finger, pen, or left mouse button is down. Add `quick_press_toggle: true` to let a quick tap keep it enabled:

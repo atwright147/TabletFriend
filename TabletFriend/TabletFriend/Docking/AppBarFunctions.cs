@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -24,221 +23,151 @@ namespace WpfAppBar
 
 	public static class AppBarFunctions
 	{
-		private class RegisterInfo
+		private sealed class RegisterInfo
 		{
-			public int CallbackId { get; set; }
-			public bool IsRegistered { get; set; }
-			public Window Window { get; set; }
-			public DockingMode Edge { get; set; }
-			public WindowStyle OriginalStyle { get; set; }
-			public Point OriginalPosition { get; set; }
-			public Size OriginalSize { get; set; }
-			public ResizeMode OriginalResizeMode { get; set; }
+			internal Window Window;
+			internal HwndSource Source;
+			internal IntPtr Handle;
+			internal int CallbackId;
+			internal bool IsRegistered;
+			internal DockingMode Edge;
+			internal AppBarPositionUpdate PositionUpdate;
 
-
-			public IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam,
-									IntPtr lParam, ref bool handled)
+			internal IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
 			{
-				if (msg == CallbackId)
+				if (!IsRegistered) return IntPtr.Zero;
+				if (msg == CallbackId && (wParam.ToInt32() == (int)Interop.ABNotify.ABN_POSCHANGED
+					|| wParam.ToInt32() == (int)Interop.ABNotify.ABN_STATECHANGE))
 				{
-					if (wParam.ToInt32() == (int)Interop.ABNotify.ABN_POSCHANGED)
-					{
-						ABSetPos(Edge, Window);
-						handled = true;
-					}
+					PositionUpdate.Request();
+					handled = true;
+				}
+				else if (msg == Interop.WM_SETTINGCHANGE || msg == Interop.WM_DISPLAYCHANGE || msg == Interop.WM_DPICHANGED)
+				{
+					// Taskbar/posture changes need not change resolution. Let WPF update its metrics first.
+					PositionUpdate.Request();
+				}
+				else if (msg == Interop.WM_WINDOWPOSCHANGED)
+				{
+					var data = CreateBarData(this);
+					Interop.SHAppBarMessage((int)Interop.ABMsg.ABM_WINDOWPOSCHANGED, ref data);
 				}
 				return IntPtr.Zero;
 			}
 
-		}
-		private static readonly Dictionary<Window, RegisterInfo> RegisteredWindowInfo
-			= new Dictionary<Window, RegisterInfo>();
-		private static RegisterInfo GetRegisterInfo(Window appbarWindow)
-		{
-			RegisterInfo reg;
-			if (RegisteredWindowInfo.ContainsKey(appbarWindow))
-			{
-				reg = RegisteredWindowInfo[appbarWindow];
-			}
-			else
-			{
-				reg = new RegisterInfo()
-				{
-					CallbackId = 0,
-					Window = appbarWindow,
-					IsRegistered = false,
-					Edge = DockingMode.Top,
-					OriginalStyle = appbarWindow.WindowStyle,
-					OriginalPosition = new Point(appbarWindow.Left, appbarWindow.Top),
-					OriginalSize =
-						new Size(appbarWindow.ActualWidth, appbarWindow.ActualHeight),
-					OriginalResizeMode = appbarWindow.ResizeMode,
-				};
-				RegisteredWindowInfo.Add(appbarWindow, reg);
-			}
-			return reg;
+			internal void OnClosed(object sender, EventArgs e) => SetAppBar(Window, DockingMode.None);
 		}
 
-		private static void RestoreWindow(Window appbarWindow)
-		{
-			var info = GetRegisterInfo(appbarWindow);
-
-			appbarWindow.WindowStyle = info.OriginalStyle;
-			appbarWindow.ResizeMode = info.OriginalResizeMode;
-			//appbarWindow.Topmost = false;
-
-			var rect = new Rect(info.OriginalPosition.X, info.OriginalPosition.Y,
-				info.OriginalSize.Width, info.OriginalSize.Height);
-			appbarWindow.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,
-					new ResizeDelegate(DoResize), appbarWindow, rect);
-
-		}
-
-		private static DockingMode _currentEdge = DockingMode.None;
+		private static readonly Dictionary<Window, RegisterInfo> RegisteredWindowInfo = new Dictionary<Window, RegisterInfo>();
 
 		public static void SetAppBar(Window appbarWindow, DockingMode edge, bool forceRedock = false)
 		{
-			if (_currentEdge == edge && !forceRedock)
-			{
-				return;
-			}
-
-			var info = GetRegisterInfo(appbarWindow);
-			info.Edge = edge;
-			_currentEdge = edge;
-
-			var abd = new Interop.APPBARDATA();
-			abd.cbSize = Marshal.SizeOf(abd);
-			abd.hWnd = new WindowInteropHelper(appbarWindow).Handle;
-
-			if (abd.hWnd.ToInt32() == 0)
-			{
-				return;
-			}
-
-			int renderPolicy;
-
+			RegisteredWindowInfo.TryGetValue(appbarWindow, out var info);
 			if (edge == DockingMode.None)
 			{
-				if (info.IsRegistered)
-				{
-					Interop.SHAppBarMessage((int)Interop.ABMsg.ABM_REMOVE, ref abd);
-					info.IsRegistered = false;
-				}
-				//RestoreWindow(appbarWindow);
-
-				// Restore normal desktop window manager attributes
-				renderPolicy = (int)Interop.DWMNCRenderingPolicy.UseWindowStyle;
-
-				Interop.DwmSetWindowAttribute(abd.hWnd, (int)Interop.DWMWINDOWATTRIBUTE.DWMA_EXCLUDED_FROM_PEEK, ref renderPolicy, sizeof(int));
-				Interop.DwmSetWindowAttribute(abd.hWnd, (int)Interop.DWMWINDOWATTRIBUTE.DWMA_DISALLOW_PEEK, ref renderPolicy, sizeof(int));
-
+				if (info == null) return;
+				info.IsRegistered = false;
+				info.PositionUpdate.Cancel();
+				if (!info.Source.IsDisposed) info.Source.RemoveHook(info.WndProc);
+				appbarWindow.Closed -= info.OnClosed;
+				RegisteredWindowInfo.Remove(appbarWindow);
+				var data = CreateBarData(info);
+				Interop.SHAppBarMessage((int)Interop.ABMsg.ABM_REMOVE, ref data);
+				SetPeekPolicy(data.hWnd, false);
 				return;
 			}
 
-			if (!info.IsRegistered)
+			if (info != null && info.Edge == edge && !forceRedock) return;
+			var handle = new WindowInteropHelper(appbarWindow).Handle;
+			if (handle == IntPtr.Zero) return;
+
+			if (info == null)
 			{
+				info = new RegisterInfo
+				{
+					Window = appbarWindow,
+					Source = HwndSource.FromHwnd(handle),
+					Handle = handle,
+					CallbackId = Interop.RegisterWindowMessage("AppBarMessage"),
+					Edge = edge
+				};
+				var registration = info;
+				info.PositionUpdate = new AppBarPositionUpdate(
+					action => appbarWindow.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, action),
+					() => QueryPosition(registration),
+					rect => DoResize(appbarWindow, rect));
+				var data = CreateBarData(info);
+				data.uCallbackMessage = info.CallbackId;
+				info.Source.AddHook(info.WndProc);
+				if (Interop.SHAppBarMessage((int)Interop.ABMsg.ABM_NEW, ref data) == UIntPtr.Zero)
+				{
+					info.Source.RemoveHook(info.WndProc);
+					return;
+				}
 				info.IsRegistered = true;
-				info.CallbackId = Interop.RegisterWindowMessage("AppBarMessage");
-				abd.uCallbackMessage = info.CallbackId;
-
-				var ret = Interop.SHAppBarMessage((int)Interop.ABMsg.ABM_NEW, ref abd);
-
-				var source = HwndSource.FromHwnd(abd.hWnd);
-				source.AddHook(info.WndProc);
+				RegisteredWindowInfo.Add(appbarWindow, info);
+				appbarWindow.Closed += info.OnClosed;
 			}
 
+			info.Edge = edge;
+			info.PositionUpdate.Cancel();
 			appbarWindow.WindowStyle = WindowStyle.None;
 			appbarWindow.ResizeMode = ResizeMode.NoResize;
 			appbarWindow.Topmost = true;
-
-			// Set desktop window manager attributes to prevent window
-			// from being hidden when peeking at the desktop or when
-			// the 'show desktop' button is pressed
-			renderPolicy = (int)Interop.DWMNCRenderingPolicy.UseWindowStyle;
-			//renderPolicy = (int)Interop.DWMNCRenderingPolicy.Enabled; // From vanilla code, but works worse. No idea why. :D
-
-			Interop.DwmSetWindowAttribute(abd.hWnd, (int)Interop.DWMWINDOWATTRIBUTE.DWMA_EXCLUDED_FROM_PEEK, ref renderPolicy, sizeof(int));
-			Interop.DwmSetWindowAttribute(abd.hWnd, (int)Interop.DWMWINDOWATTRIBUTE.DWMA_DISALLOW_PEEK, ref renderPolicy, sizeof(int));
-
-			ABSetPos(info.Edge, appbarWindow);
+			SetPeekPolicy(handle, true);
+			info.PositionUpdate.Request();
 		}
 
-		private delegate void ResizeDelegate(Window appbarWindow, Rect rect);
-		private static void DoResize(Window appbarWindow, Rect rect)
+		private static Interop.APPBARDATA CreateBarData(RegisterInfo info) => new Interop.APPBARDATA
 		{
-			appbarWindow.Width = rect.Width;
-			appbarWindow.Height = rect.Height;
-			appbarWindow.Top = rect.Top;
-			appbarWindow.Left = rect.Left;
+			cbSize = Marshal.SizeOf<Interop.APPBARDATA>(),
+			hWnd = info.Handle,
+			uEdge = (int)info.Edge
+		};
+
+		private static void SetPeekPolicy(IntPtr handle, bool docked)
+		{
+			var value = docked ? 1 : 0;
+			Interop.DwmSetWindowAttribute(handle, (int)Interop.DWMWINDOWATTRIBUTE.DWMA_EXCLUDED_FROM_PEEK, ref value, sizeof(int));
+			Interop.DwmSetWindowAttribute(handle, (int)Interop.DWMWINDOWATTRIBUTE.DWMA_DISALLOW_PEEK, ref value, sizeof(int));
 		}
 
-
-
-		private static void ABSetPos(DockingMode edge, Window appbarWindow)
+		private static void DoResize(Window window, Rect rect)
 		{
-			var barData = new Interop.APPBARDATA();
-			barData.cbSize = Marshal.SizeOf(barData);
-			barData.hWnd = new WindowInteropHelper(appbarWindow).Handle;
-			barData.uEdge = (int)edge;
+			window.Width = rect.Width;
+			window.Height = rect.Height;
+			window.Top = rect.Top;
+			window.Left = rect.Left;
+		}
 
-			// Transforms a coordinate from WPF space to Screen space
-			var toPixel = PresentationSource.FromVisual(appbarWindow).CompositionTarget.TransformToDevice;
-			// Transforms a coordinate from Screen space to WPF space
-			var toWpfUnit = PresentationSource.FromVisual(appbarWindow).CompositionTarget.TransformFromDevice;
-
-			// Transform window size from wpf units (1/96 ") to real pixels, for win32 usage
-			var sizeInPixels = toPixel.Transform(new Vector(appbarWindow.ActualWidth, appbarWindow.ActualHeight));
-			// Even if the documentation says SystemParameters.PrimaryScreen{Width, Height} return values in 
-			// "pixels", they return wpf units instead.
-			var screenSizeInPixels =
-				toPixel.Transform(new Vector(SystemParameters.PrimaryScreenWidth, SystemParameters.PrimaryScreenHeight));
-
-			if (barData.uEdge == (int)DockingMode.Left || barData.uEdge == (int)DockingMode.Right)
-			{
-				barData.rc.top = 0;
-				barData.rc.bottom = (int)screenSizeInPixels.Y;
-				if (barData.uEdge == (int)DockingMode.Left)
-				{
-					barData.rc.left = 0;
-					barData.rc.right = (int)Math.Round(sizeInPixels.X);
-				}
-				else
-				{
-					barData.rc.right = (int)screenSizeInPixels.X;
-					barData.rc.left = barData.rc.right - (int)Math.Round(sizeInPixels.X);
-				}
-			}
-			else
-			{
-				barData.rc.left = 0;
-				barData.rc.right = (int)screenSizeInPixels.X;
-				if (barData.uEdge == (int)DockingMode.Top)
-				{
-					barData.rc.top = 0;
-					barData.rc.bottom = (int)Math.Round(sizeInPixels.Y);
-				}
-				else
-				{
-					barData.rc.bottom = (int)screenSizeInPixels.Y;
-					barData.rc.top = barData.rc.bottom - (int)Math.Round(sizeInPixels.Y);
-				}
-			}
-
+		private static Rect QueryPosition(RegisterInfo info)
+		{
+			var window = info.Window;
+			var barData = CreateBarData(info);
+			var toPixel = info.Source.CompositionTarget.TransformToDevice;
+			var toWpfUnit = info.Source.CompositionTarget.TransformFromDevice;
+			// ActualWidth/Height may still belong to the previous layout.
+			var sizeInPixels = toPixel.Transform(new Vector(window.Width, window.Height));
+			var vertical = info.Edge == DockingMode.Left || info.Edge == DockingMode.Right;
+			var thickness = Math.Max(1, (int)Math.Round(vertical ? sizeInPixels.X : sizeInPixels.Y));
+			// Always start with the full primary screen, not a previously reserved work area.
+			barData.rc = AppBarGeometry.RequestedBounds(info.Edge,
+				Interop.GetSystemMetrics(Interop.SM_CXSCREEN), Interop.GetSystemMetrics(Interop.SM_CYSCREEN), thickness);
 			Interop.SHAppBarMessage((int)Interop.ABMsg.ABM_QUERYPOS, ref barData);
+			barData.rc = AppBarGeometry.WithThickness(barData.rc, info.Edge, thickness);
 			Interop.SHAppBarMessage((int)Interop.ABMsg.ABM_SETPOS, ref barData);
 
-			// transform back to wpf units, for wpf window resizing in DoResize. 
+			// On Windows 11, app-bar negotiation can exclude the expanded tablet
+			// taskbar even while the work area extends to its collapsed boundary.
+			// Keep the shell reservation, but fill the actual usable perpendicular
+			// span. Read it after SETPOS so it includes the current reservation.
+			if (Interop.SystemParametersInfo(Interop.SPI_GETWORKAREA, 0, out var workArea, 0))
+				barData.rc = AppBarGeometry.WithWorkAreaSpan(barData.rc, workArea, info.Edge);
+
 			var location = toWpfUnit.Transform(new Point(barData.rc.left, barData.rc.top));
 			var dimension = toWpfUnit.Transform(new Vector(barData.rc.right - barData.rc.left,
 				barData.rc.bottom - barData.rc.top));
-
-			var rect = new Rect(location, new Size(dimension.X, dimension.Y));
-
-			//This is done async, because WPF will send a resize after a new appbar is added.  
-			//if we size right away, WPFs resize comes last and overrides us.
-			appbarWindow.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,
-				new ResizeDelegate(DoResize), appbarWindow, rect);
+			return new Rect(location, new Size(dimension.X, dimension.Y));
 		}
 	}
 }
