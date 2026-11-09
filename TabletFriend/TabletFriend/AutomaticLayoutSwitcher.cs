@@ -38,12 +38,13 @@ namespace TabletFriend
 					_appSpecificLayouts.Add(appRegex, layout.Key);
 				}
 			}
+			if (_monitor.FocusedApp != null) OnAppChanged(_monitor.FocusedApp);
 		}
 
 
 		private void OnAppChanged(string app)
 		{
-			if (_disposed || !AppState.Settings.PerAppLayoutsEnabled)
+			if (_disposed || AppState.Settings == null || !AppState.Settings.PerAppLayoutsEnabled)
 			{
 				return;
 			}

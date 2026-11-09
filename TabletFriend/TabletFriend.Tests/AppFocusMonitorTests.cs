@@ -90,6 +90,32 @@ namespace TabletFriend.Tests
             Assert.Equal(failRegistration ? 0 : 1, removals);
         }
 
+        [Fact]
+        public async Task ForegroundWindowProbeDetectsAppsWithoutAutomationFocusEvents()
+        {
+            string foreground = null;
+            var clipStudioSeen = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var editorSeen = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var monitor = new AppFocusMonitor(_ => { }, _ => { },
+                () => Volatile.Read(ref foreground), TimeSpan.FromMilliseconds(10));
+            monitor.OnAppChanged += app =>
+            {
+                if (app == "CLIPStudioPaint") clipStudioSeen.TrySetResult(true);
+                if (app == "Code") editorSeen.TrySetResult(true);
+            };
+
+            Volatile.Write(ref foreground, "CLIPStudioPaint");
+            await clipStudioSeen.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal("CLIPStudioPaint", monitor.FocusedApp);
+
+            Volatile.Write(ref foreground, "Code");
+            await editorSeen.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal("Code", monitor.FocusedApp);
+
+            monitor.Dispose();
+            await monitor.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
         private static TaskCompletionSource<bool> NewSource()
             => new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
     }

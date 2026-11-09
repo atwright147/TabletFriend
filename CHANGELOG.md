@@ -23,6 +23,7 @@
 
 ### Fixed
 
+- Per-app layouts now follow the foreground window even when an application does not emit UI Automation focus events, including Clip Studio Paint.
 - Disabling toolbar autohide now immediately restores a hidden toolbar, and the toolbar opens visibly on startup when autohide is disabled.
 - Docked toolbars now resize and recenter to the current work area when the taskbar changes height between desktop and tablet modes, including when Windows reserves the expanded tablet-taskbar height while showing its collapsed version. Rapid docking or visibility changes no longer apply stale sizes or accumulate Windows message hooks.
 - Custom icon paths now resolve consistently from the application directory even when Tablet Friend is launched from another working directory.
