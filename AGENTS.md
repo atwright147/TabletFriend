@@ -7,6 +7,7 @@ These instructions apply to the entire repository.
 - Tablet Friend is a Windows WPF application targeting .NET 10. Use the SDK selected by `global.json`.
 - The solution is `TabletFriend/TabletFriend.sln`; application code is in `TabletFriend/TabletFriend`, and regression tests are in `TabletFriend/TabletFriend.Tests`.
 - Follow the surrounding code style and keep changes focused on the requested task.
+- Before reading or changing personal layouts, run `pwsh -NoProfile -File scripts/Resolve-UserFolders.ps1` under the intended Windows account. Use its verified `Documents` path for `TabletFriend\layouts`. If it reports `IdentityMismatch`, the shell is using a sandbox account even if `USERPROFILE` points at the user's profile; rerun under the user's account and do not infer Documents from `USERPROFILE` or `OneDrive`.
 - For application changes, run `task test` or `dotnet test TabletFriend/TabletFriend.sln --configuration Release`. Add or update regression tests when behavior changes warrant them.
 - For every new or updated layout YAML, validate it against `schemas/layout.schema.json` and Tablet Friend's runtime layout parser. The bundled-layout checks in `TabletFriend/TabletFriend.Tests/LayoutSchemaTests.cs` run with `task test`; extend those tests when changing layout syntax or validation rules so the schema and runtime behavior stay aligned.
 - Follow `docs/testing.md` for desktop acceptance testing. Report any checks that could not be run.
