@@ -232,7 +232,6 @@ buttons:
 		text: K
 		# The full list of fonts is available here: http://www.microsoft.com/typography/fonts/
 		font: wingdings
-		font_size: 
 		size: 2,4
 
 	bold:

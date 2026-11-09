@@ -32,10 +32,15 @@ namespace TabletFriend
         {
             try
             {
-                var deserializer = new DeserializerBuilder()
-                    .WithNamingConvention(UnderscoredNamingConvention.Instance)
-                    .IgnoreUnmatchedProperties().Build();
-                var data = deserializer.Deserialize<T>(text.Replace("\t", "  "));
+                var normalized = text.Replace("\t", "  ");
+                if (typeof(T) == typeof(LayoutData)) LayoutSyntaxValidator.Validate(normalized, path);
+                var builder = new DeserializerBuilder()
+                    .WithNamingConvention(UnderscoredNamingConvention.Instance);
+                // Layouts have a strict, published schema. Keep themes on their
+                // existing permissive path until they have their own schema.
+                if (typeof(T) != typeof(LayoutData)) builder.IgnoreUnmatchedProperties();
+                var deserializer = builder.Build();
+                var data = deserializer.Deserialize<T>(normalized);
                 if (data == null) throw new FormatException("Empty configuration.");
                 if (data is LayoutData layout) LayoutValidator.Validate(layout, path);
                 return new ImportResult<T>(path, data);

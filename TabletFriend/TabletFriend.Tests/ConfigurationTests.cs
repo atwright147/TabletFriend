@@ -98,11 +98,12 @@ namespace TabletFriend.Tests
         }
 
         [Fact]
-        public void TabsAndUnknownPropertiesRemainSupported()
+        public void TabsRemainSupportedButUnknownLayoutPropertiesAreRejected()
         {
-            var read = Importer.Parse<LayoutData>("tabs.yaml", "unknown: true\nbuttons:\n\tcut:\n\t\taction: ctrl+x\n");
-            Assert.Null(read.Error);
-            Assert.Contains("cut", read.Data.Buttons.Keys);
+            var valid = Importer.Parse<LayoutData>("tabs.yaml", "buttons:\n\tcut:\n\t\taction: ctrl+x\n");
+            Assert.Null(valid.Error);
+            Assert.Contains("cut", valid.Data.Buttons.Keys);
+            Assert.NotNull(Importer.Parse<LayoutData>("tabs.yaml", "unknown: true\nbuttons: {}\n").Error);
         }
 
         private static string Convert(int value) => value.ToString();

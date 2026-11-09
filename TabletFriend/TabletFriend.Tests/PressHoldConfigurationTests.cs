@@ -45,11 +45,13 @@ namespace TabletFriend.Tests
         [InlineData("hide")]
         [InlineData("dock left")]
         [InlineData("undock")]
-        [InlineData("")]
         public void PrefixedAndMissingActionsAreRejected(string action)
         {
             AssertError($"action: '{action}'\npress_and_hold: true", "plain key action");
         }
+
+        [Fact]
+        public void EmptyActionIsRejected() => AssertError("action: ''\npress_and_hold: true", "action must not be empty");
 
         [Theory]
         [InlineData("action: ctrl\nquick_press_toggle: true", "requires press_and_hold")]
@@ -59,12 +61,11 @@ namespace TabletFriend.Tests
         public void InvalidOptionsHaveButtonAndFileContext(string yaml, string error) => AssertError(yaml, error);
 
         [Fact]
-        public void SpacersIgnoreInvalidActionSettings()
+        public void SpacersRejectIgnoredActionSettings()
         {
             var result = Parse("spacer: true\naction: not-a-key\npress_and_hold: true\nquick_press_toggle: true\nquick_press_threshold_ms: -1");
-            Assert.Null(result.Error);
-            using var model = new LayoutModel(result.Data);
-            Assert.Null(Assert.Single(model.Buttons).Action);
+            Assert.Null(result.Data);
+            Assert.Contains("A spacer may only set", result.Error);
         }
 
         private static ImportResult<LayoutData> Parse(string yaml) =>

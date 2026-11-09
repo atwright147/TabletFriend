@@ -59,6 +59,10 @@ Releasing outside the button or losing pointer capture cancels the press without
 
 Custom files live in your Windows **Documents\TabletFriend** folder, independently of where the app is installed or extracted. Redirected Documents folders (including OneDrive) are supported. Put layouts in `layouts`, themes in `themes`, and images in `icons`. The same custom files are used by installed and portable copies running under your Windows account.
 
+Layout fields are described in [the JSON Schema](schemas/layout.schema.json). With the recommended VS Code YAML extension, layouts in this repository receive completion and validation automatically. For a personal layout in Documents, add a first-line comment such as `# yaml-language-server: $schema=file:///C:/path/to/TabletFriend/schemas/layout.schema.json`, using the file URI of your checkout's schema. The YAML extension also supports a `yaml.schemas` user setting if you prefer to associate all personal layouts at once. The schema assists editing; Tablet Friend performs its own validation when it loads a file.
+
+Layout loading rejects unknown field names, invalid numeric values, unsupported styles, an `action` combined with `actions`, and action settings on spacers. `press_and_hold` requires a plain key action; `quick_press_toggle` and `quick_press_threshold_ms` require `press_and_hold`. Width and button size must be positive (button size at least 8), margin must be nonnegative, and opacity must be between 0 and 1 with `min_opacity` no greater than `max_opacity`. A button may omit its action to display text or an icon. If an edit is invalid, Tablet Friend reports it and keeps the last valid layout until you correct the file.
+
 Bundled layouts and themes remain available. A custom `.yaml` file with the same name overrides the bundled version; deleting that custom file restores the bundled version. To edit an example, use **settings > open bundled examples...** and copy it into the corresponding custom folder first.
 
 To use a custom icon, put a PNG or SVG file in `Documents\TabletFriend\icons` and set the button's `icon` to its path, for example `icon: icons/my-icon.svg` or `icon: icons/my-icon.png`. Relative paths in custom layouts start from `Documents\TabletFriend`. Absolute paths and existing application-relative paths still work, including the legacy `files/icons/...` prefix. Custom images take precedence over application images for custom layouts. SVGs keep their original colours. Both formats support `icon_stretch: fit` (preserve proportions), `fill` (fill the button), and `none` (original size, the default). After changing an image, save the layout file again to reload it.
@@ -110,7 +114,7 @@ Now, press `Ctrl+S` and your toolbar will update automatically. Magic!
 
 Paste button is wider that the others, because its `size` is 2 cells wide and 1 cell high. You also may wonder how do you specify button positions. That's the best thing - you don't. Instead of tediously calculating all the positions by hand, you let Tablet Friend handle this for you. 
 
-All buttons are put on the layout from left to right in a single line - until they run out of space. Every layout has a property called 'layout_width'. It tells the layout how many cells it has before it will be forced to put buttons on a second line. By default, this value is 2, but you can change it. Simply paste this on the very first line of your config:
+All buttons are put on the layout from left to right in a single line - until they run out of space. Every layout has a property called 'layout_width'. It tells the layout how many cells it has before it will be forced to put buttons on a second line. By default, this value is 1, but you can change it. Simply paste this on the very first line of your config:
 
 ```yaml
 layout_width: 4

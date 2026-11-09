@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tablet Friend layout",
+  "description": "A Tablet Friend toolbar layout. Buttons are packed in declaration order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["buttons"],
+  "properties": {
+    "layout_width": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Maximum number of button cells per row before wrapping."
+    },
+    "button_size": {
+      "type": "integer",
+      "minimum": 8,
+      "default": 32,
+      "description": "Size in pixels of one button cell, excluding its margin."
+    },
+    "margin": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 8,
+      "description": "Space in pixels between cells."
+    },
+    "min_opacity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.2,
+      "description": "Toolbar opacity while unfocused. Must not exceed max_opacity."
+    },
+    "max_opacity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.9,
+      "description": "Toolbar opacity while focused. Must not be below min_opacity."
+    },
+    "app": {
+      "type": "string",
+      "description": "Optional case-insensitive process name, with * wildcards, for automatic switching."
+    },
+    "buttons": {
+      "type": "object",
+      "description": "Named buttons and spacers, shown in declaration order. Names must be unique.",
+      "propertyNames": { "minLength": 1, "pattern": "\\S" },
+      "additionalProperties": { "$ref": "#/$defs/button" }
+    }
+  },
+  "$defs": {
+    "button": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "One key chord or action command; see docs/keys.md and the sample layout."
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1, "pattern": "\\S" },
+          "description": "Action commands executed in order. Cannot be combined with action."
+        },
+        "press_and_hold": {
+          "type": "boolean",
+          "default": false,
+          "description": "Hold a plain key chord while the button is pressed."
+        },
+        "quick_press_toggle": {
+          "type": "boolean",
+          "default": false,
+          "description": "A short tap locks or unlocks a press-and-hold key."
+        },
+        "quick_press_threshold_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 250,
+          "description": "Taps shorter than this duration lock the key; requires press_and_hold."
+        },
+        "text": { "type": "string", "description": "Button label, or tooltip when an icon is present. Use \\n for line breaks." },
+        "icon": { "type": "string", "description": "Material Design icon name or PNG/SVG path." },
+        "icon_stretch": {
+          "enum": ["none", "fill", "fit"],
+          "default": "none",
+          "description": "How a custom image fills the button."
+        },
+        "size": {
+          "type": "string",
+          "pattern": "^\\s*0*[1-9][0-9]*\\s*,\\s*0*[1-9][0-9]*\\s*$",
+          "default": "1,1",
+          "description": "Width,height in positive button cells, for example 2,1."
+        },
+        "style": {
+          "enum": ["default", "accent", "circular_accent", "circular", "outlined", "shy", "none"],
+          "description": "Named visual style; omitted means the current theme's default."
+        },
+        "visibility": {
+          "enum": ["always", "docked", "undocked", "docked_left", "docked_right", "docked_top"],
+          "default": "always",
+          "description": "Docking modes in which this button appears."
+        },
+        "spacer": { "type": "boolean", "default": false, "description": "Reserve empty cells instead of drawing a button." },
+        "font": { "type": "string", "description": "Font family for text buttons." },
+        "font_size": { "type": "integer", "minimum": 1, "description": "Font size in pixels." },
+        "font_weight": { "type": "integer", "minimum": 1, "maximum": 999, "description": "OpenType font weight." }
+      },
+      "allOf": [
+        { "not": { "required": ["action", "actions"] } },
+        {
+          "if": { "properties": { "spacer": { "const": true } }, "required": ["spacer"] },
+          "then": { "propertyNames": { "enum": ["spacer", "size", "visibility"] } }
+        },
+        {
+          "if": { "properties": { "press_and_hold": { "const": true } }, "required": ["press_and_hold"] },
+          "then": { "required": ["action"], "not": { "required": ["actions"] } }
+        },
+        {
+          "if": { "properties": { "quick_press_toggle": { "const": true } }, "required": ["quick_press_toggle"] },
+          "then": { "properties": { "press_and_hold": { "const": true } }, "required": ["press_and_hold"] }
+        },
+        {
+          "if": { "required": ["quick_press_threshold_ms"] },
+          "then": { "properties": { "press_and_hold": { "const": true } }, "required": ["press_and_hold"] }
+        }
+      ]
+    }
+  }
+}

@@ -8,6 +8,7 @@ These instructions apply to the entire repository.
 - The solution is `TabletFriend/TabletFriend.sln`; application code is in `TabletFriend/TabletFriend`, and regression tests are in `TabletFriend/TabletFriend.Tests`.
 - Follow the surrounding code style and keep changes focused on the requested task.
 - For application changes, run `task test` or `dotnet test TabletFriend/TabletFriend.sln --configuration Release`. Add or update regression tests when behavior changes warrant them.
+- For every new or updated layout YAML, validate it against `schemas/layout.schema.json` and Tablet Friend's runtime layout parser. The bundled-layout checks in `TabletFriend/TabletFriend.Tests/LayoutSchemaTests.cs` run with `task test`; extend those tests when changing layout syntax or validation rules so the schema and runtime behavior stay aligned.
 - Follow `docs/testing.md` for desktop acceptance testing. Report any checks that could not be run.
 - Documentation-only changes do not require application tests; check the diff for accuracy and whitespace errors with `git diff --check`.
 

@@ -10,7 +10,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" PrivateAssets="all" />
+    <PackageReference Include="JsonSchema.Net" Version="9.6.0" />
     <ProjectReference Include="../TabletFriend/TabletFriend.csproj" />
     <None Include="../TabletFriend/files/**/*.yaml" Link="files/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../schemas/layout.schema.json" Link="schemas/layout.schema.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -117,14 +117,14 @@ buttons:
 	reset_zoom:
 		icon: search
 		font_weight: 500
-		action: 1
+		action: "1"
 		size: 2,2
 		style: accent
 		text: reset zoom
 	reset_rotation:
 		icon: lock_reset
 		font_weight: 500
-		action: 5
+		action: "5"
 		size: 2,2
 		style: accent
 		text: reset rotation

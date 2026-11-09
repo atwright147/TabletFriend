@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added a JSON Schema and VS Code YAML association for layout completion and early validation, with instructions for personal layouts.
 - Added opt-in press-and-hold buttons for mouse, touch, and pen, with optional quick-tap locking and a configurable tap threshold. Enabled native Windows pointer input to receive touch contact durations. Touch/pen holds suppress the toolbar context menu while intentional mouse right-clicks remain available. Held keys release when these controls hide or rebuild and during graceful shutdown.
 - Added custom SVG button icons alongside PNGs, using the same `icon` paths and `icon_stretch` options while preserving SVG colours and vector scaling.
 - Added built-in `brush-plus`, `brush-minus`, `opacity-plus`, and `opacity-minus` vector icons that follow the button's theme colour and can be selected by name in any layout. Editable Affinity sources and SVG exports are included in `icons/builtin`.
@@ -13,6 +14,7 @@
 
 ### Changed
 
+- Layout loading now rejects unknown fields, invalid numeric settings, unsupported styles, conflicting actions, and action settings on spacers while retaining the last valid layout after a bad edit. Existing personal layouts with these values need correction.
 - Custom layouts, themes, and icons now live in Windows Documents\TabletFriend, shared by installed and portable copies. User layouts and themes override bundled files by name; remove an override to restore the bundled version. The tray menu opens custom files and bundled examples separately.
 - Legacy files and backups are copied on first use into the user folder without overwriting existing files. Known bundled versions are skipped; uncertain or conflicting files are preserved under Imports with reports for review. Original files remain intact, and repeated installations keep separate backups.
 - Updated the app and tests to .NET 10 and pinned the SDK through `global.json`.

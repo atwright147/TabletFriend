@@ -118,11 +118,12 @@ namespace TabletFriend.Tests
                 var original = AppState.Layouts["custom"];
                 var errors = new List<string>();
                 manager.Errors += errors.Add;
-                File.WriteAllText(path, "buttons:\n  a:\n    size: 0,1\n");
+                File.WriteAllText(path, "buttons:\n  a:\n    sizze: 1,1\n");
                 await WaitUntil(() => errors.Count > 0);
                 await manager.Completion;
                 Assert.Same(original, AppState.Layouts["custom"]);
                 Assert.Single(errors);
+                Assert.Contains("a", errors[0]);
                 manager.NotifyChanged(Path.Combine(folder.Path, "unrelated.png"));
                 await manager.Completion;
                 Assert.Single(errors);
