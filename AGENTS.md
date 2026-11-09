@@ -2,6 +2,10 @@
 
 These instructions apply to the entire repository.
 
+## Tool use
+
+- Prefer dedicated file listing, search, and read tools when available. Use `apply_patch` for edits. Use `rg` or `rg --files` for repository searches when no dedicated search tool is available. Reserve PowerShell for builds, tests, Git, scripts, and tasks without a suitable dedicated tool.
+
 ## Project and validation
 
 - Tablet Friend is a Windows WPF application targeting .NET 10. Use the SDK selected by `global.json`.
